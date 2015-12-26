@@ -13,15 +13,22 @@
   {:coll SimpleDataType})
 
 (s/def CollectionWithReference
-  "Collection of entities pointed to with :signature."
-  {:coll (s/enum :ref-to)
-   :signature s/Str})
+  {:coll (s/enum :ref-to) :signature s/Str})
+
+(s/def ReferenceToSingleEntity
+  {:one (s/enum :ref-to) :signature s/Str})
+
+(s/def SomethingWithReference
+  "Something which refers to collection of entities or single entity determined by :signature."
+  (s/conditional
+   #(contains? % :coll) CollectionWithReference
+   :else ReferenceToSingleEntity))
 
 (s/def PropertyDataType
   (s/conditional
    #(keyword? %) SimpleDataType
    #(= 1 (count %)) Collection
-   :else CollectionWithReference))
+   :else SomethingWithReference))
 
 (s/def Property
   {:name s/Str (s/optional-key :type) PropertyDataType

@@ -1,6 +1,6 @@
-(ns larva.core-test
+(ns larva.graph-test
   (:require [clojure.test :refer :all]
-            [larva.core :as sa]
+            [larva.graph :as lg]
             [ubergraph.core :as g]))
 
 ;;;;;;
@@ -80,46 +80,79 @@
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}]}]})
 
+(def standard-program-cardinality-1
+  "Test case contains one to many, one to one cardinality and whole-part
+  relationship."
+  {:entities
+   [{:signature "Musician"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "surname" :type :str :gui-label "Surname"}
+                  {:name "nickname" :type :str :gui-label "nick"}
+                  {:name "honors" :type {:coll :str}}]}
+    {:signature "Band"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "genre" :type :str :gui-label "Genre"}
+                  {:name "largeness" :type :str :gui-label "Largeness"}
+                  {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}
+                  {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]}
+    {:signature "Category"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "subcategories" :type {:coll :ref-to :signature "Category"}
+                   :gui-label "subcategories"}]}
+    {:signature "Festival"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "location" :type :geo :gui-label "Loco"}]}]})
+
 ;;;;;;
 ;; Tests
 ;;;;;;
 
 (deftest root-successors-test
   (testing "Number of root node successors."
-    (is (= 2 (-> (sa/to-graph standard-program-1)
-                 (g/successors sa/root-node)
+    (is (= 2 (-> (lg/to-graph standard-program-1)
+                 (g/successors lg/root-node)
                  count)))
-    (is (= 1 (-> (sa/to-graph standard-program-2)
-                 (g/successors sa/root-node)
+    (is (= 1 (-> (lg/to-graph standard-program-2)
+                 (g/successors lg/root-node)
                  count)))))
 
 (deftest entities-successors-test
   (testing "Number of entities-dispatch-node successors."
-    (is (= 3 (-> (sa/to-graph standard-program-1)
-                 (g/successors sa/entities-node)
+    (is (= 3 (-> (lg/to-graph standard-program-1)
+                 (g/successors lg/entities-node)
                  count)))
-    (is (= 4 (-> (sa/to-graph standard-program-11)
-                 (g/successors sa/entities-node)
+    (is (= 4 (-> (lg/to-graph standard-program-11)
+                 (g/successors lg/entities-node)
                  count)))
-    (is (= 3 (-> (sa/to-graph standard-program-2)
-                 (g/successors sa/entities-node)
+    (is (= 3 (-> (lg/to-graph standard-program-2)
+                 (g/successors lg/entities-node)
                  count)))
-    (is (= 0 (-> (sa/to-graph no-entities-edge-case)
-                 (g/successors sa/entities-node)
+    (is (= 0 (-> (lg/to-graph no-entities-edge-case)
+                 (g/successors lg/entities-node)
                  count)))
-    (is (= 0 (-> (sa/to-graph no-entities-no-about-edge-case)
-                 (g/successors sa/entities-node)
+    (is (= 0 (-> (lg/to-graph no-entities-no-about-edge-case)
+                 (g/successors lg/entities-node)
                  count)))))
 
 (deftest entity-property-test
   (testing "Name of properties of a specific entity."
     (is (= ["name" "surname" "nickname" "honors"]
-           (let [g (sa/to-graph standard-program-1)
+           (let [g (lg/to-graph standard-program-1)
                  n "Musician"]
              (->> (g/successors g n)
                   (mapv #(:name (g/attrs g %)))))))
     (is (= ["name" "location"]
-           (let [g (sa/to-graph standard-program-1)
+           (let [g (lg/to-graph standard-program-1)
                  n "Festival"]
              (->> (g/successors g n)
                   (mapv #(:name (g/attrs g %)))))))))
+
+(deftest property-references-test
+  (testing "References of properties. References represent property-entity
+relationships originating from cardinality of entities."
+    (let [prop {:name "subcategories" :type {:coll :ref-to :signature "Category"}
+                :gui-label "subcategories"}]
+      (is (= "Category"
+             (-> (lg/to-graph standard-program-cardinality-1)
+                 (g/out-edges (lg/build-property-label prop "Category"))
+                 first :dest))))))

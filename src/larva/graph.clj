@@ -1,4 +1,4 @@
-(ns larva.core
+(ns larva.graph
   (:require [larva.meta-model :refer :all]
             [schema.core :as s]
             [ubergraph.core :as g]))
@@ -33,6 +33,13 @@
 (defn build-about-edge-label [cmd-order]
   (str "about: " cmd-order))
 
+(s/defn add-property-references :- {:graph ubergraph.core.Ubergraph
+                                    :next-order s/Int}
+  [graph :- ubergraph.core.Ubergraph property :- Property
+   parent :- s/Str next-order :- s/Int]
+  ;; TODO: implement
+  {:graph graph :next-order (inc next-order)})
+
 (s/defn ^:always-validate add-properties :- {:graph ubergraph.core.Ubergraph
                                              :next-order s/Int}
   "Adds properties of an entity."
@@ -42,17 +49,19 @@
   (loop [g graph props properties po next-order]
     (if (> (count props) 0)
       (let [prop-label (build-property-label (first props) parent)
+            property-type (:type (first props))
             g-w-property
             (-> (g/add-nodes-with-attrs g [prop-label
                                            {:name (:name (first props))
-                                            :type (:type (first props))
+                                            :type property-type
                                             :gui-label
                                             (:gui-label (first props))
                                             :uuid (node-uuid)}])
                 (g/add-edges [parent prop-label {:label
                                                  (build-property-edge-label
-                                                  po)}]))]
-        (recur g-w-property (rest props) (inc po)))
+                                                  po)}])
+                (add-property-references (first props) parent po))]
+        (recur (:graph g-w-property) (rest props) (:next-order g-w-property)))
       {:graph g :next-order po})))
 
 (s/defn ^:always-validate add-entitiy-node :- {:graph ubergraph.core.Ubergraph
