@@ -1,6 +1,6 @@
 # larva
 
-Pretends to be a Clojure application generator.
+Tends to be a Clojure application generator.
 
 ## License
 
