@@ -44,7 +44,7 @@
 (s/defn ^:always-validate
   add-property-reference :- {:graph ubergraph.core.Ubergraph
                              :next-order s/Int}
-  "Add forward property->entity references."
+  "Add property->entity references."
   [graph :- ubergraph.core.Ubergraph property :- Property
    parent :- s/Str next-order :- s/Int]
   (if (or (= :ref-to (get-in property [:type :coll]))
@@ -160,5 +160,5 @@ entity-order for next entity."
         (:graph g)))))
 
 ;;;;;; play
-(g/viz-graph (to-graph uni-model))
+;; (g/viz-graph (to-graph uni-model))
 ;;;;;;
