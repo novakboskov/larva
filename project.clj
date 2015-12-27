@@ -8,6 +8,6 @@
                  [prismatic/schema "1.0.4"]
                  [ubergraph "0.1.9"]
                  [rhizome "0.2.6-SNAPSHOT"]]
-  :main ^:skip-aot larva.core
+  :main ^:skip-aot larva.graph
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

@@ -24,7 +24,8 @@
 (defn build-entity-edge-label [order]
   (str "entities: " order))
 
-(defn build-property-label [prop parent]
+(s/defn ^:always-validate build-property-label :- s/Str
+  [prop :- Property parent :- s/Str]
   (str (:name prop) "#" parent))
 
 (defn build-property-edge-label [next-order]
@@ -33,12 +34,32 @@
 (defn build-about-edge-label [cmd-order]
   (str "about: " cmd-order))
 
-(s/defn add-property-references :- {:graph ubergraph.core.Ubergraph
-                                    :next-order s/Int}
+(s/defn ^:always-validate build-reference-edge-label :- s/Str
+  [prop-type :- SomethingWithReference
+   order :- s/Int]
+  (cond
+    (contains? prop-type :coll) (str "reference:[" order "] collection")
+    (contains? prop-type :one) (str "reference:[" order "] one")))
+
+(s/defn ^:always-validate
+  add-property-reference :- {:graph ubergraph.core.Ubergraph
+                             :next-order s/Int}
+  "Add forward property->entity references."
   [graph :- ubergraph.core.Ubergraph property :- Property
    parent :- s/Str next-order :- s/Int]
-  ;; TODO: implement
-  {:graph graph :next-order (inc next-order)})
+  (if (or (= :ref-to (get-in property [:type :coll]))
+          (= :ref-to (get-in property [:type :one])))
+    {:graph (g/add-edges graph [(build-property-label property parent)
+                                (get-in property [:type :signature])
+                                {:label (build-reference-edge-label
+                                         (:type property) next-order)
+                                 :cardinality
+                                 (cond
+                                   (contains? (:type property) :coll) :coll
+                                   (contains? (:type property) :one) :one)
+                                 :color :green}])
+     :next-order (inc next-order)}
+    {:graph graph :next-order next-order}))
 
 (s/defn ^:always-validate add-properties :- {:graph ubergraph.core.Ubergraph
                                              :next-order s/Int}
@@ -60,7 +81,7 @@
                 (g/add-edges [parent prop-label {:label
                                                  (build-property-edge-label
                                                   po)}])
-                (add-property-references (first props) parent po))]
+                (add-property-reference (first props) parent (inc po)))]
         (recur (:graph g-w-property) (rest props) (:next-order g-w-property)))
       {:graph g :next-order po})))
 
@@ -139,5 +160,5 @@ entity-order for next entity."
         (:graph g)))))
 
 ;;;;;; play
-;; (g/viz-graph (to-graph uni-model))
+(g/viz-graph (to-graph uni-model))
 ;;;;;;
