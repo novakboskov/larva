@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/novakboskov/larva.svg?branch=develop)](https://travis-ci.org/novakboskov/larva)
+
 # larva
 
 Tends to be a Clojure application generator.
