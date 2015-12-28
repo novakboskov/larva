@@ -230,6 +230,7 @@ relationships with their cardinality."
              (-> (lg/to-graph standard-program-no-refs)
                  (g/out-edges (lg/build-property-label p01 "Musician"))
                  count)))
+      ;; whole-part relationship
       (is (= "Category"
              (-> (lg/to-graph standard-program-cardinality-1)
                  (g/out-edges (lg/build-property-label p1 "Category"))
