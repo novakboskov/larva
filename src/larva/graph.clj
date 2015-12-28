@@ -1,9 +1,10 @@
 (ns larva.graph
-  (:require [larva.meta-model :refer :all]
+  (:require [clojure.edn :as edn]
+            [larva.meta-model :refer :all]
             [schema.core :as s]
             [ubergraph.core :as g]))
 
-(def uni-model (clojure.edn/read-string (slurp "resources/edn-sources/standard_app.clj")))
+(def uni-model (edn/read-string (slurp "resources/edn-sources/standard_app.clj")))
 
 ;;;;;;
 ;; Transforming standard app program to Ubergraph
