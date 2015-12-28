@@ -1,5 +1,5 @@
 (defproject larva "0.1.0-SNAPSHOT"
-  :description "Pretends to be a Clojure application generator."
+  :description "Tends to be a Clojure application generator."
   :url "https://github.com/novakboskov/larva"
   :author "Novak Boškov"
   :license {:name "Eclipse Public License"
