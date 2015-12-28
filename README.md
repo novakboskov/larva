@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/novakboskov/larva.svg?branch=develop)](https://travis-ci.org/novakboskov/larva)
+[![Build Status](https://travis-ci.org/novakboskov/larva.svg?branch=master)](https://travis-ci.org/novakboskov/larva)
 
 # larva
 
