@@ -152,7 +152,9 @@
     {:signature "Category"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "subcategories" :type {:coll :ref-to :signature "Category"}
-                   :gui-label "subcategories"}]}
+                   :gui-label "subcategories"}
+                  {:name "bands" :type {:coll :ref-to :signature "Band"}
+                   :gui-label "Bands of category"}]}
     {:signature "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}
@@ -163,6 +165,7 @@
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]}
+
   )
 ;;;;;;
 ;; Tests
@@ -276,7 +279,16 @@ relationships with their cardinality."
                                                      "Festival"}
                          :gui-label "Participated in"}
           fest-bands {:name "bands" :type {:coll :ref-to :signature "Band"}
-                      :gui-label "participant bands"}]
+                      :gui-label "participant bands"}
+          mus-soc-prof {:name "social-profile" :type {:one :ref-to :signature
+                                                      "SocialMediaProfile"}
+                        :gui-label "profile"}
+          prof-owner {:name "owner" :type {:one :ref-to :signature "Musician"}
+                      :gui-label "Name"}
+          band-categ {:name "category" :type {:one :ref-to :signature "Category"}
+                      :gui-label "Category"}
+          categ-bands {:name "bands" :type {:coll :ref-to :signature "Band"}
+                       :gui-label "participant bands"}]
       ;; many->many
       (let [es-band->fest
             (g/find-edges g {:src (lg/build-property-label band-particip "Band")
@@ -287,4 +299,27 @@ relationships with their cardinality."
         (is (= 1 (count es-band->fest)))
         (is (= :coll (:cardinality (g/attrs g (first es-band->fest)))))
         (is (= 1 (count es-fest->band)))
-        (is (= :coll (:cardinality (g/attrs g (first es-fest->band)))))))))
+        (is (= :coll (:cardinality (g/attrs g (first es-fest->band))))))
+      ;; one->one
+      (let [es-mus->profile
+            (g/find-edges g {:src (lg/build-property-label mus-soc-prof "Musician")
+                             :dest "SocialMediaProfile"})
+            es-profile->mus
+            (g/find-edges g {:src (lg/build-property-label prof-owner
+                                                           "SocialMediaProfile")
+                             :dest "Musician"})]
+        (is (= 1 (count es-mus->profile)))
+        (is (= :one (:cardinality (g/attrs g (first es-mus->profile)))))
+        (is (= 1 (count es-profile->mus)))
+        (is (= :one (:cardinality (g/attrs g (first es-profile->mus))))))
+      ;; one->many
+      (let [es-band->categ
+            (g/find-edges g {:src (lg/build-property-label band-categ "Band")
+                             :dest "Category"})
+            es-categ->band
+            (g/find-edges g {:src (lg/build-property-label categ-bands "Category")
+                             :dest "Band"})]
+        (is (= 1 (count es-band->categ)))
+        (is (= :one (:cardinality (g/attrs g (first es-band->categ)))))
+        (is (= 1 (count es-categ->band)))
+        (is (= :coll (:cardinality (g/attrs g (first es-categ->band)))))))))

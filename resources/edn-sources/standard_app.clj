@@ -26,7 +26,9 @@
   {:signature "Category"
    :properties [{:name "name" :type :str :gui-label "Name"}
                 {:name "subcategories" :type {:coll :ref-to :signature "Category"}
-                 :gui-label "subcategories"}]}
+                 :gui-label "subcategories"}
+                {:name "bands" :type {:coll :ref-to :signature "Band"}
+                 :gui-label "Bands of category"}]}
   {:signature "Festival"
    :properties [{:name "name" :type :str :gui-label "Name"}
                 {:name "location" :type :geo :gui-label "Loco"}
