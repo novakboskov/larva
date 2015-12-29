@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/novakboskov/larva.svg?branch=master)](https://travis-ci.org/novakboskov/larva)
+[![Circle CI](https://circleci.com/gh/novakboskov/larva.svg?style=svg)](https://circleci.com/gh/novakboskov/larva)
 
 # larva
 
