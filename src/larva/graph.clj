@@ -4,7 +4,8 @@
             [schema.core :as s]
             [ubergraph.core :as g]))
 
-(def uni-model (edn/read-string (slurp "resources/edn-sources/standard_app.clj")))
+(def uni-model (edn/read-string
+                (slurp "resources/edn-sources/standard_app.edn")))
 
 ;;;;;;
 ;; Transforming standard app program to Ubergraph
@@ -14,6 +15,8 @@
   (java.util.UUID/randomUUID))
 
 (def about-node-label "about")
+
+(def meta-node-label "meta")
 
 (def root-node :program)
 
@@ -33,6 +36,9 @@
   (str "property: " next-order))
 
 (defn build-about-edge-label [cmd-order]
+  (str "about: " cmd-order))
+
+(defn build-meta-node-label [cmd-order]
   (str "about: " cmd-order))
 
 (s/defn ^:always-validate build-reference-edge-label :- s/Str
@@ -129,7 +135,7 @@ entity-order for next entity."
                                         :next-order s/Int}
   "Adds whole about node."
   [graph :- ubergraph.core.Ubergraph
-   about cmd-order]
+   about :- About cmd-order :- s/Int]
   {:graph
    (-> (g/add-nodes-with-attrs graph [about-node-label
                                       {:name (:name about)
@@ -140,18 +146,35 @@ entity-order for next entity."
                                                  :order cmd-order}]))
    :next-order (inc cmd-order)})
 
+(s/defn add-meta :- {:graph ubergraph.core.Ubergraph
+                     :next-order s/Int}
+  "Adds whole meta node."
+  [graph :- ubergraph.core.Ubergraph
+   meta_data :- Meta cmd-order :- s/Int]
+  {:graph
+   (-> (g/add-nodes-with-attrs graph [meta-node-label
+                                      {:api-only (:api-only meta_data)}])
+       (g/add-edges [root-node meta-node-label {:label (build-meta-node-label cmd-order)
+                                                :order cmd-order}]))
+   :next-order (inc cmd-order)})
+
 (s/defn ^:always-validate to-graph :- ubergraph.core.Ubergraph
   "Transforms standard app program EDN to Ubergraph."
   [program :- Program]
   (let [about (:about program)
+        meta_data (:meta program)
         bare-graph {:graph (g/digraph root-node) :next-order 1}
         graph-with-about (if about (add-about (:graph bare-graph) about 1)
                              bare-graph)
+        graph-with-meta (if meta_data
+                          (add-meta (:graph graph-with-about) meta_data
+                                    (:next-order graph-with-about))
+                          graph-with-about)
         entities (:entities program)
         graph (if (> (count entities) 0)
-                (add-entities-beginning-node (:graph graph-with-about)
-                                             (:next-order graph-with-about))
-                graph-with-about)
+                (add-entities-beginning-node (:graph graph-with-meta)
+                                             (:next-order graph-with-meta))
+                graph-with-meta)
         entity-order (:next-order graph)]
     ;; adding entities to graph
     (loop [g graph ents entities eo entity-order]

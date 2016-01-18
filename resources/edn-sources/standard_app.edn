@@ -33,7 +33,9 @@
                  :gui-label "Participated in"}]}
   {:signature "Category"
    :properties [{:name "name" :type :str :gui-label "Name"}
-                {:name "subcategories" :type {:coll :ref-to :signature "Category"}
+                {:name "subcategories" :type {:coll :ref-to
+                                              :signature "Category"
+                                              :gui :table-view}
                  :gui-label "subcategories"}
                 {:name "bands" :type {:coll :ref-to
                                       :signature "Band"
