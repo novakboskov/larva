@@ -5,10 +5,6 @@
              [test-data :refer :all]]
             [ubergraph.core :as g]))
 
-;;;;;;
-;; Tests
-;;;;;;
-
 (deftest root-successors-test
   (testing "Number of root node successors."
     (is (= 2 (-> (lg/to-graph standard-program-1)

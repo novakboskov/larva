@@ -4,7 +4,7 @@
   :author "Novak Boškov"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [prismatic/schema "1.0.4"]
                  [ubergraph "0.1.9"]
                  [rhizome "0.2.6-SNAPSHOT"]]

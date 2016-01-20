@@ -1,8 +1,5 @@
-(ns larva.test-data)
-
-;;;;;;
-;; Test data
-;;;;;;
+(ns larva.test-data
+  "Test cases used in testing Larva")
 
 (def no-entities-edge-case
   {:about

@@ -1,15 +1,10 @@
 (ns larva.graph
+  "Provides functions for transforming standard application program (uni-model) to its graph representation.
+  Graph representation is further used in program interpretation and code generation."
   (:require [clojure.edn :as edn]
             [larva.meta-model :refer :all]
             [schema.core :as s]
             [ubergraph.core :as g]))
-
-(def uni-model (edn/read-string
-                (slurp "resources/edn-sources/standard_app.edn")))
-
-;;;;;;
-;; Transforming standard app program to Ubergraph
-;;;;;;
 
 (defn node-uuid []
   (java.util.UUID/randomUUID))
@@ -159,7 +154,7 @@ entity-order for next entity."
    :next-order (inc cmd-order)})
 
 (s/defn ^:always-validate to-graph :- ubergraph.core.Ubergraph
-  "Transforms standard app program EDN to Ubergraph."
+  "Transforms standard application program (uni-model) to its graph representation."
   [program :- Program]
   (let [about (:about program)
         meta_data (:meta program)
@@ -184,5 +179,7 @@ entity-order for next entity."
         (:graph g)))))
 
 ;;;;;; play
+;; (def uni-model (edn/read-string
+;;                 (slurp "resources/edn-sources/standard_app.edn")))
 ;; (g/viz-graph (to-graph uni-model))
 ;;;;;;
