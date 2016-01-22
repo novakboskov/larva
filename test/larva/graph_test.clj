@@ -43,16 +43,18 @@
 
 (deftest entity-property-test
   (testing "Name of properties of a specific entity."
-    (is (= ["name" "surname" "nickname" "honors"]
+    (is (= #{"name" "surname" "nickname" "honors"}
            (let [g (lg/to-graph standard-program-1)
                  n "Musician"]
              (->> (g/successors g n)
-                  (mapv #(:name (g/attrs g %)))))))
-    (is (= ["name" "location"]
+                  (mapv #(:name (g/attrs g %)))
+                  set))))
+    (is (= #{"name" "location"}
            (let [g (lg/to-graph standard-program-1)
                  n "Festival"]
              (->> (g/successors g n)
-                  (mapv #(:name (g/attrs g %)))))))))
+                  (mapv #(:name (g/attrs g %)))
+                  set))))))
 
 (deftest property-reference-test
   (testing "References of properties. References represent property-entity

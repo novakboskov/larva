@@ -4,4 +4,4 @@ machine:
 
 test:
   override:
-    - lein do clean, javac, test
+    - lein do clean, test-all
