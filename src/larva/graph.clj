@@ -153,7 +153,7 @@ entity-order for next entity."
                                                 :order cmd-order}]))
    :next-order (inc cmd-order)})
 
-(s/defn ^:always-validate to-graph :- ubergraph.core.Ubergraph
+(s/defn ^:always-validate ->graph :- ubergraph.core.Ubergraph
   "Transforms standard application program (uni-model) to its graph representation."
   [program :- Program]
   (let [about (:about program)
@@ -177,9 +177,3 @@ entity-order for next entity."
         (let [entity (add-whole-entity (:graph g) (first ents) eo)]
           (recur entity (rest ents) (:next-order entity)))
         (:graph g)))))
-
-;;;;;; play
-;; (def uni-model (edn/read-string
-;;                 (slurp "resources/edn-sources/standard_app.edn")))
-;; (g/viz-graph (to-graph uni-model))
-;;;;;;

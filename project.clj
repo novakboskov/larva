@@ -7,7 +7,10 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [prismatic/schema "1.0.4"]
                  [ubergraph "0.1.9"]
-                 [rhizome "0.2.6-SNAPSHOT"]]
+                 [rhizome "0.2.6-SNAPSHOT"]
+                 [leiningen "2.5.3"]
+                 [yesql "0.5.1"]
+                 [conman "0.2.9"]]
   :main ^:skip-aot larva.graph
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
