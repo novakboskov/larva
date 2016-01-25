@@ -1,15 +1,37 @@
 (ns larva.db.utils
   (:require [clojure.java.io :as io]
-            [conman.core :as cnm]
-            [yesql.core :refer [defqueries]]))
+            [yesql.core :refer [defqueries]]
+            [conman.core :as conman]))
+
+(def ^:private objects (atom {}))
+
+(defn- symbol-uuid []
+  (java.util.UUID/randomUUID))
+
+(defmacro ^:private wrap-object [object symbol]
+  (swap! objects #(assoc % symbol object))
+  `(let [o# (~symbol objects)]
+     (swap! objects #(dissoc % ~symbol))
+     o#))
+
+(defn- make-code-that-evals-to [object]
+  (let [symbol (keyword (str (symbol-uuid)))]
+    `(wrap-object ~object ~symbol)))
+
+(defmacro ^:private functionalize [macro]
+  `(fn [conn# & filenames#] (let [code# ('make-code-that-evals-to conn#)]
+                              (eval (cons '~macro (cons code# filenames#))))))
 
 (defn make-queries-from-dirs
-  "Takes a variable number of directory paths (which are presumably in the classpath)
-  and options to forward to yesql.core/defqueries as arguments.
-  For each path, finds the .sql files and calls `defqueries` on each.
+  "Takes a variable number of directory paths (which are presumably in the classpath),
+  options to forward to yesql.core/defqueries or connection to forward to conman.core/bind-connection  as arguments.
+  If options are provided:
+  for each path, finds the .sql files and calls `defqueries` on each.
+  If connection is provided:
+  Make vector of sql paths contained in provided directories and bind connection for each directory.
   Does not walk subdirectories for more .sql files."
-  [{:keys [paths options]}]
-  (loop [dir-paths paths]
+  [{:keys [paths options connection]}]
+  (loop [dir-paths paths queries []]
     (if (> (count dir-paths) 0)
       (do
         (let [dir (first dir-paths)
@@ -18,16 +40,13 @@
                          :when
                          (#(and (.isFile %) (re-matches #".*\.sql$" name)) file)]
                      (str dir (System/getProperty "file.separator") name))]
-          (loop [files sqls]
-            (if (> (count files) 0)
-              (do
-                (defqueries (first files) options)
-                (recur (rest files))))))
-        (recur (rest dir-paths))))))
-
-(defn bind-connections-from-dirs
-  "Takes a variable number of directory paths (which are presumably in the classpath)
-  and a connection. All the sql files in specified directories will be packed
-  in a vector and alongside connection passed to conman/bind-connection.
-  Does not walk subdirectories for more .sql files."
-  [connection paths])
+          (if (nil? connection)
+            (loop [files sqls queries []]
+              (if (> (count files) 0)
+                (recur (rest files)
+                       (conj queries (defqueries (first files) options)))
+                queries))
+            (recur (rest dir-paths)
+                   (apply (functionalize conman/bind-connection)
+                          connection sqls)))))
+      queries)))
