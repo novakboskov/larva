@@ -4,14 +4,14 @@
             [yesql.core :refer [defqueries]]
             [conman.core :as conman]))
 
-(def ^:private objects (atom {}))
+(def objects (atom {}))
 
-(defn- symbol-uuid []
+(defn symbol-uuid []
   (java.util.UUID/randomUUID))
 
-(defmacro ^:private wrap-object [object symbol]
+(defmacro wrap-object [object symbol]
   (swap! objects #(assoc % symbol object))
-  `(let [o# (~symbol objects)]
+  `(let [o# (~symbol @objects)]
      (swap! objects #(dissoc % ~symbol))
      o#))
 
@@ -20,7 +20,7 @@
     `(wrap-object ~object ~symbol)))
 
 (defmacro ^:private functionalize [macro]
-  `(fn [conn# & filenames#] (let [code# ('make-code-that-evals-to conn#)]
+  `(fn [conn# & filenames#] (let [code# (make-code-that-evals-to conn#)]
                               (eval (cons '~macro (cons code# filenames#))))))
 
 (defn make-queries-from-dirs
