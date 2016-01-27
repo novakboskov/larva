@@ -72,7 +72,7 @@
           :start (connect!)
           :stop (disconnect! *db*))
 
-(conman/bind-connection *db* "sql/queries.sql")
+(conman/bind-connection *db* <<for queries-files>>)
 <% endif %><% ifequal db-type "mysql" %>
 (defn to-date [sql-date]
   (-> sql-date (.getTime) (java.util.Date.)))

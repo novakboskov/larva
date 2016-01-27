@@ -1,9 +1,6 @@
 (ns larva.meta-model
+  "Defining meta-model in the form of system of schemes."
   (:require [schema.core :as s]))
-
-;;;;;;
-;; Defining "meta-model" in the form of system of schemes.
-;;;;;;
 
 (s/def SimpleDataType
   (s/enum :str :num :geo :datetime))

@@ -95,11 +95,12 @@
    entity :- Entity entity-order :- s/Int]
   (let [entity-label (build-entity-node-label entity)]
     {:graph
-     (-> (g/add-nodes graph entity-label)
+     (-> (g/add-nodes-with-attrs graph [entity-label
+                                        {:signature (:signature entity)
+                                         :uuid (node-uuid)}])
          (g/add-edges [entities-node entity-label
                        {:label (build-entity-edge-label entity-order)
-                        :order entity-order
-                        :uuid (node-uuid)}]))
+                        :order entity-order}]))
      :next-order (inc entity-order)
      :node-label entity-label}))
 

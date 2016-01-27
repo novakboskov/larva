@@ -7,8 +7,6 @@
    ["profiles.clj" "core/profiles.clj"]
    ["Procfile" "core/Procfile"]
    ["README.md" "core/README.md"]
-   ["env/dev/resources/log4j.properties" "core/env/dev/resources/log4j.properties"]
-   ["env/prod/resources/log4j.properties" "core/env/prod/resources/log4j.properties"]
    ["env/prod/resources/config.edn" "core/env/prod/resources/config.edn"]
 
    ;; config namespaces
