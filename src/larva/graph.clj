@@ -43,7 +43,15 @@
     (contains? prop-type :coll) (str "reference:[" order "] collection")
     (contains? prop-type :one) (str "reference:[" order "] one")))
 
-(s/defn ^:always-validate
+(s/defn ^{:always-validate true :private true} build-property-map
+  [property :- Property]
+  (let [type (if-let [pt (-> property :type)] {:type pt} {})
+        gui-label (if-let [gl (-> property :gui-label)] {:gui-label gl} {})
+        name {:name (:name property)}
+        uuid {:uuid (node-uuid)}]
+    (merge name uuid type gui-label)))
+
+(s/defn ^{:always-validate true :private true}
   add-property-reference :- {:graph ubergraph.core.Ubergraph
                              :next-order s/Int}
   "Add property->entity references."
@@ -63,8 +71,8 @@
      :next-order (inc next-order)}
     {:graph graph :next-order next-order}))
 
-(s/defn ^:always-validate add-properties :- {:graph ubergraph.core.Ubergraph
-                                             :next-order s/Int}
+(s/defn ^{:always-validate true :private true}
+  add-properties :- {:graph ubergraph.core.Ubergraph :next-order s/Int}
   "Adds properties of an entity."
   [graph :- ubergraph.core.Ubergraph parent :- s/Str
    properties :- Properties
@@ -72,14 +80,9 @@
   (loop [g graph props properties po next-order]
     (if (> (count props) 0)
       (let [prop-label (build-property-label (first props) parent)
-            property-type (:type (first props))
             g-w-property
             (-> (g/add-nodes-with-attrs g [prop-label
-                                           {:name (:name (first props))
-                                            :type property-type
-                                            :gui-label
-                                            (:gui-label (first props))
-                                            :uuid (node-uuid)}])
+                                           (build-property-map (first props))])
                 (g/add-edges [parent prop-label {:label
                                                  (build-property-edge-label
                                                   po)}])
@@ -87,9 +90,9 @@
         (recur (:graph g-w-property) (rest props) (:next-order g-w-property)))
       {:graph g :next-order po})))
 
-(s/defn ^:always-validate add-entitiy-node :- {:graph ubergraph.core.Ubergraph
-                                               :next-order s/Int
-                                               :node-label s/Str}
+(s/defn ^{:always-validate true :private true}
+  add-entitiy-node :- {:graph ubergraph.core.Ubergraph :next-order s/Int
+                       :node-label s/Str}
   "Adds entity node."
   [graph :- ubergraph.core.Ubergraph
    entity :- Entity entity-order :- s/Int]
@@ -104,8 +107,8 @@
      :next-order (inc entity-order)
      :node-label entity-label}))
 
-(s/defn ^:always-validate add-whole-entity :- {:graph ubergraph.core.Ubergraph
-                                               :next-order s/Int}
+(s/defn ^{:always-validate true :private true}
+  add-whole-entity :- {:graph ubergraph.core.Ubergraph :next-order s/Int}
   "Extend graph with entity and all its successors. Returns graph and
 entity-order for next entity."
   [graph :- ubergraph.core.Ubergraph
@@ -116,9 +119,9 @@ entity-order for next entity."
     {:graph (:graph g-w-props)
      :next-order (:next-order g-w-props)}))
 
-(s/defn ^:always-validate add-entities-beginning-node :-
-  {:graph ubergraph.core.Ubergraph
-   :next-order s/Int}
+(s/defn ^{:always-validate true :private true}
+  add-entities-beginning-node :- {:graph ubergraph.core.Ubergraph
+                                  :next-order s/Int}
   [graph :- ubergraph.core.Ubergraph order :- s/Int]
   {:graph
    (-> (g/add-nodes graph entities-node)
@@ -127,8 +130,8 @@ entity-order for next entity."
                                               :order order}]))
    :next-order (inc order)})
 
-(s/defn ^:always-validate add-about :- {:graph ubergraph.core.Ubergraph
-                                        :next-order s/Int}
+(s/defn ^{:always-validate true :private true}
+  add-about :- {:graph ubergraph.core.Ubergraph :next-order s/Int}
   "Adds whole about node."
   [graph :- ubergraph.core.Ubergraph
    about :- About cmd-order :- s/Int]
@@ -142,8 +145,8 @@ entity-order for next entity."
                                                  :order cmd-order}]))
    :next-order (inc cmd-order)})
 
-(s/defn add-meta :- {:graph ubergraph.core.Ubergraph
-                     :next-order s/Int}
+(s/defn ^{:always-validate true :private true}
+  add-meta :- {:graph ubergraph.core.Ubergraph :next-order s/Int}
   "Adds whole meta node."
   [graph :- ubergraph.core.Ubergraph
    meta_data :- Meta cmd-order :- s/Int]

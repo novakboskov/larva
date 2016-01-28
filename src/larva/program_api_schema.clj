@@ -1,41 +1,25 @@
 (ns larva.program-api-schema
-  (:require [schema.core :as s]))
+  "Schemes used in program API. This schemes don't need to be the same as those in metamodel.
+  Some of this schemes may be used for representing data in the form which is more
+  suitable to various code generators."
+  (:require [schema.core :as s]
+            [larva.meta-model :as mm]))
 
 (s/def APIEntities
   [s/Str])
 
-(s/def APISimpleDataType
-  (s/enum :str :num :geo :datetime))
+(def APISimpleDataType mm/SimpleDataType)
 
-(s/def APICollection
-  "Simple collection property."
-  {:coll APISimpleDataType})
+(def APICollection mm/Collection)
 
-(s/def APICollectionWithReference
-  {:coll (s/enum :ref-to)
-   :signature s/Str
-   :gui (s/maybe (s/enum :table-view))})
+(def APICollectionWithReference mm/CollectionWithReference)
 
-(s/def APIReferenceToSingleEntity
-  {:one (s/enum :ref-to)
-   :signature s/Str
-   :gui (s/maybe (s/enum :select-form :drop-list))})
+(def APIReferenceToSingleEntity mm/ReferenceToSingleEntity)
 
-(s/def APISomethingWithReference
-  "Something which refers to collection of entities or single entity determined by :signature."
-  (s/conditional
-   #(contains? % :coll) APICollectionWithReference
-   :else APIReferenceToSingleEntity))
+(def APISomethingWithReference mm/SomethingWithReference)
 
-(s/def APIPropertyDataType
-  (s/conditional
-   #(keyword? %) APISimpleDataType
-   #(= 1 (count %)) APICollection
-   :else APISomethingWithReference))
+(def APIPropertyDataType mm/PropertyDataType)
 
-(s/def APIProperty
-  {:name s/Str :type APIPropertyDataType
-   :gui-label (s/maybe s/Str)})
+(def APIProperty mm/Property)
 
-(s/def APIProperties
-  [APIProperty])
+(def APIProperties mm/Properties)

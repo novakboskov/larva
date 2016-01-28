@@ -29,10 +29,4 @@
 
 ;;;;;; play
 ;; (u/viz-graph (model->program {:path "resources/edn-sources/standard_app.edn"}))
-
-;; (let [g (model->program {:path "resources/edn-sources/standard_app.edn"})]
-;;   (->> (all-entities g)
-;;        first
-;;        (entity-properties g)))
-
 ;;;;;;
