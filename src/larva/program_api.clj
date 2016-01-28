@@ -2,7 +2,7 @@
   "API to inner program representation."
   (:require [clojure.edn :as edn]
             [larva
-             [api-schemes :refer :all]
+             [program-api-schema :refer :all]
              [graph :as g]]
             [schema.core :as s]
             [ubergraph.core :as u]))
@@ -17,12 +17,12 @@
   ([{:keys [path]}] (-> path slurp edn/read-string g/->graph))
   ([] (-> "larva-src/larva.clj" slurp edn/read-string g/->graph)))
 
-(s/defn ^:always-validate all-entities :- Entities
+(s/defn ^:always-validate all-entities :- APIEntities
   "Returns signatures of all entities in program."
   [program :- ubergraph.core.Ubergraph]
   (u/successors program g/entities-node))
 
-(s/defn ^:always-validate entity-properties :- Properties
+(s/defn ^:always-validate entity-properties :- APIProperties
   "Returns properties of an entity given by signature."
   [graph :- ubergraph.core.Ubergraph entity :- s/Str]
   (mapv #(dissoc (u/attrs graph %) :uuid) (u/successors graph entity)))
@@ -30,8 +30,9 @@
 ;;;;;; play
 ;; (u/viz-graph (model->program {:path "resources/edn-sources/standard_app.edn"}))
 
-(let [g (model->program {:path "resources/edn-sources/standard_app.edn"})]
-  (->> (all-entities g)
-       first
-       (entity-properties g)))
+;; (let [g (model->program {:path "resources/edn-sources/standard_app.edn"})]
+;;   (->> (all-entities g)
+;;        first
+;;        (entity-properties g)))
+
 ;;;;;;
