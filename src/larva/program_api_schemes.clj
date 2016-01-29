@@ -1,4 +1,4 @@
-(ns larva.program-api-schema
+(ns larva.program-api-schemes
   "Schemes used in program API. This schemes don't need to be the same as those in metamodel.
   Some of this schemes may be used for representing data in the form which is more
   suitable to various code generators."
@@ -23,3 +23,9 @@
 (def APIProperty mm/Property)
 
 (def APIProperties mm/Properties)
+
+(def APIMeta mm/Meta)
+
+(def APIAbout mm/About)
+
+(def APIProgram mm/Program)
