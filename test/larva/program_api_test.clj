@@ -12,8 +12,10 @@
     (is (= 0 (-> {:model no-entities-no-about-edge-case}
                  pa/all-entities
                  count)))
-    (is (= ["Musician" "Band" "Festival"] (-> {:model standard-program-1}
-                                              pa/all-entities)))
-    (is (= ["Musician" "Band" "Category" "Festival" "SocialMediaProfile"]
+    (is (= #{"Musician" "Band" "Festival"} (-> {:model standard-program-1}
+                                               pa/all-entities
+                                               set)))
+    (is (= #{"Musician" "Band" "Category" "Festival" "SocialMediaProfile"}
            (-> {:model references-1}
-               pa/all-entities)))))
+               pa/all-entities
+               set)))))
