@@ -42,7 +42,8 @@
 
 (s/def Entity
   {:signature s/Str
-   :properties Properties})
+   :properties Properties
+   (s/optional-key :plural) s/Str})
 
 (s/def Entities
   [Entity])

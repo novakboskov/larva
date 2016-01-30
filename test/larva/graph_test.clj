@@ -56,6 +56,17 @@
                   (mapv #(:name (g/attrs g %)))
                   set))))))
 
+(deftest entity-plural-test
+  (testing "Presence and names of plurals in entity definition."
+    (let [g (lg/->graph entities-with-signature-plural)
+          g1 (lg/->graph standard-program-with-meta)]
+      (is (= ["Bands" "Categories"]
+             (mapv #(:plural (g/attrs g %)) ["Band" "Category"])))
+      (is (not-any? #(contains? % :plural)
+                    (map #(g/attrs g %) ["Festival" "SocialMediaProfile" "Musician"])))
+      (is (not-any? #(contains? % :plural)
+                    (map #(g/attrs g1 %) (g/successors g1 lg/entities-node)))))))
+
 (deftest property-reference-test
   (testing "References of properties. References represent property-entity
 relationships with their cardinality."

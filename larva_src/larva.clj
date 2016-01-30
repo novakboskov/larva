@@ -18,6 +18,7 @@
                                                :signature "SocialMediaProfile"}
                  :gui-label "profile"}]}
   {:signature "Band"
+   :plural "Bands"
    :properties [{:name "name" :type :str :gui-label "Name"}
                 {:name "genre" :type :str :gui-label "Genre"}
                 {:name "largeness" :type :str :gui-label "Largeness"}
@@ -32,6 +33,7 @@
                                              :gui :table-view}
                  :gui-label "Participated in"}]}
   {:signature "Category"
+   :plural "Categories"
    :properties [{:name "name" :type :str :gui-label "Name"}
                 {:name "subcategories" :type {:coll :ref-to
                                               :signature "Category"

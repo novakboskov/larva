@@ -54,9 +54,7 @@
       queries)))
 
 (defn drill-out-name-for-db [name]
-  (-> name
-      (cs/replace #"[^a-zA-Z0-9]" "_")
-      cs/lower-case))
+  (-> name (cs/replace #"[^a-zA-Z0-9]" "_") cs/lower-case))
 
 (defn build-sequence-string
   "Builds string suited for INSERT or VALUES SQL statement.
@@ -66,8 +64,8 @@
                               item (case what
                                      :values name
                                      :insert (str ":" name)
-                                     :set (str name " = :" name))]
-                          item) (str ", ") (str %1))
+                                     :set (str name " = :" name))] item)
+                        (str ", ") (str %1))
                   (reduce "" properties) (cs/replace-first ", " ""))]
     (case what
       (or :values :insert) (str "(" items ")")

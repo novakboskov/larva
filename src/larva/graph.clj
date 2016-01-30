@@ -52,6 +52,14 @@
     (merge name uuid type gui-label)))
 
 (s/defn ^{:always-validate true :private true}
+  build-entity-map
+  [entity :- Entity]
+  (let [signature {:signature (:signature entity)}
+        uuid {:uuid (node-uuid)}
+        plural (if-let [pl (:plural entity)] {:plural pl} {})]
+    (merge signature uuid plural)))
+
+(s/defn ^{:always-validate true :private true}
   add-property-reference :- {:graph ubergraph.core.Ubergraph
                              :next-order s/Int}
   "Add property->entity references."
@@ -99,8 +107,7 @@
   (let [entity-label (build-entity-node-label entity)]
     {:graph
      (-> (g/add-nodes-with-attrs graph [entity-label
-                                        {:signature (:signature entity)
-                                         :uuid (node-uuid)}])
+                                        (build-entity-map entity)])
          (g/add-edges [entities-node entity-label
                        {:label (build-entity-edge-label entity-order)
                         :order entity-order}]))
