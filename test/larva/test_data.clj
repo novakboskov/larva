@@ -160,7 +160,7 @@
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]})
 
-(def standard-pfrogram-with-meta
+(def standard-program-with-meta
   {:about
    {:name "Pilot model"
     :author "Novak Boskov"
