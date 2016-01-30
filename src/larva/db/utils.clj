@@ -2,7 +2,8 @@
   "Provides common utilities which larva needs for producing database related things."
   (:require [clojure.java.io :as io]
             [yesql.core :refer [defqueries]]
-            [conman.core :as conman]))
+            [conman.core :as conman]
+            [clojure.string :as cs]))
 
 (def objects (atom {}))
 
@@ -51,3 +52,27 @@
                  (conj queries (apply (functionalize conman/bind-connection)
                                       connection sqls)))))
       queries)))
+
+(defn drill-out-name-for-db [name]
+  (-> name
+      (cs/replace #"[^a-zA-Z0-9]" "_")
+      cs/lower-case))
+
+(defn build-sequence-string
+  "Builds string suited for INSERT or VALUES SQL statement.
+  What can be either :insert or :values or :set."
+  [properties what]
+  (let [items (-> #(->> (let [name (drill-out-name-for-db (:name %2))
+                              item (case what
+                                     :values name
+                                     :insert (str ":" name)
+                                     :set (str name " = :" name))]
+                          item) (str ", ") (str %1))
+                  (reduce "" properties) (cs/replace-first ", " ""))]
+    (case what
+      (or :values :insert) (str "(" items ")")
+      :set items)))
+
+(defn build-plural-for-name
+  [name]
+  (str (drill-out-name-for-db name) "s"))
