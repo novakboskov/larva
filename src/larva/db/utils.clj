@@ -1,9 +1,9 @@
 (ns larva.db.utils
   "Provides common utilities which larva needs for producing database related things."
   (:require [clojure.java.io :as io]
-            [yesql.core :refer [defqueries]]
+            [clojure.string :as cs]
             [conman.core :as conman]
-            [clojure.string :as cs]))
+            [yesql.core :refer [defqueries]]))
 
 (def objects (atom {}))
 
@@ -71,6 +71,8 @@
       (or :values :insert) (str "(" items ")")
       :set items)))
 
-(defn build-plural-for-name
-  [name]
-  (str (drill-out-name-for-db name) "s"))
+(defn build-plural-for-entity
+  [entity-signature model-source]
+  (let [entity (api/entity-info entity-signature model-source)]
+    (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
+          (str (drill-out-name-for-db entity-signature) "s"))))

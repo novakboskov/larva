@@ -8,6 +8,9 @@
 (s/def APIEntities
   [s/Str])
 
+(s/def APIEntityInfo
+  {:signature s/Str(s/optional-key :plural) s/Str})
+
 (def APISimpleDataType mm/SimpleDataType)
 
 (def APICollection mm/Collection)

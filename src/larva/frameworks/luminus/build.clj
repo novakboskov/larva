@@ -15,7 +15,7 @@
     (doseq [ent ent-props]
       (let [ent-sign (first (keys ent))
             props (first (vals ent))
-            entity-plural (db/build-plural-for-name ent-sign)
+            entity-plural (db/build-plural-for-entity ent-sign args)
             properties (db/build-sequence-string props :insert)
             values-properties (db/build-sequence-string props :values)
             set-properties (db/build-sequence-string props :set)]
@@ -31,6 +31,7 @@
       add-database-layer))
 
 ;;;;;;play
+(make)
 ;; (->files {:name "this-and-here"} ["ovde/je/ovo.clj" "Hello World!"])
 ;; (defn resource [r]
 ;;   (->> r (str "larva/frameworks/luminus/assets/core/resources/") (io/resource)))

@@ -11,7 +11,6 @@
                  [leiningen "2.5.3"]
                  [yesql "0.5.1"]
                  [conman "0.2.9"]]
-  :main ^:skip-aot larva.graph
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
