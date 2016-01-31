@@ -278,5 +278,4 @@
                                         :gui :select-form}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
-                  {:name "provider" :type :str :gui-label "provider"}]}]}
-  )
+                  {:name "provider" :type :str :gui-label "provider"}]}]})

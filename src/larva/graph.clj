@@ -75,7 +75,7 @@
                                  (cond
                                    (contains? (:type property) :coll) :coll
                                    (contains? (:type property) :one) :one)
-                                 :color :green}])
+                                 :order next-order :color :green}])
      :next-order (inc next-order)}
     {:graph graph :next-order next-order}))
 
@@ -92,8 +92,8 @@
             (-> (g/add-nodes-with-attrs g [prop-label
                                            (build-property-map (first props))])
                 (g/add-edges [parent prop-label {:label
-                                                 (build-property-edge-label
-                                                  po)}])
+                                                 (build-property-edge-label po)
+                                                 :order po}])
                 (add-property-reference (first props) parent (inc po)))]
         (recur (:graph g-w-property) (rest props) (:next-order g-w-property)))
       {:graph g :next-order po})))

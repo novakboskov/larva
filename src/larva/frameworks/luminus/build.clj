@@ -20,6 +20,9 @@
             values-properties (db/build-sequence-string props :values)
             set-properties (db/build-sequence-string props :set)]
         ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
+        ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace
+        ;; then to produce complete new file resources/templates/frameworks/luminus/larva-specific/db/src/sql.db.clj
+        ;; maybe user wants to add some more code in this file, model refreshing should not affect that code.
         ))))
 
 (defn make
@@ -31,7 +34,7 @@
       add-database-layer))
 
 ;;;;;;play
-(make)
+;; (make)
 ;; (->files {:name "this-and-here"} ["ovde/je/ovo.clj" "Hello World!"])
 ;; (defn resource [r]
 ;;   (->> r (str "larva/frameworks/luminus/assets/core/resources/") (io/resource)))

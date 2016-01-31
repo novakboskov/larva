@@ -2,8 +2,8 @@
   "API to inner program representation."
   (:require [clojure.edn :as edn]
             [larva
-             [program-api-schemes :refer :all]
-             [graph :as g]]
+             [graph :as g]
+             [program-api-schemes :refer :all]]
             [schema.core :as s]
             [ubergraph.core :as u]))
 
@@ -11,6 +11,13 @@
 
 (defn- extract-property-name [property]
   (first (clojure.string/split property #"#")))
+
+(defn- sort-entities-by-edge [entities program]
+  (sort-by #(:order (u/attrs program (u/find-edge program g/entities-node %)))
+           entities))
+
+(defn- sort-properties-by-edge [properties entity program]
+  (sort-by #(:order (u/attrs program (u/find-edge program entity %))) properties))
 
 (def ^:private default-model-path "larva_src/larva.clj")
 
@@ -42,17 +49,18 @@
   "Returns signatures of all entities in program.
    Path to program model can be supplied otherwise default is be used.
    Model itself also can be supplied."
-  ([] (vec (u/successors (model->program) g/entities-node)))
+  ([] (let [p (model->program)]
+        (vec (sort-entities-by-edge (u/successors p g/entities-node) p))))
   ([{:keys [model-path model] :as model-options}]
    (let [p (resolve-model-source model-options)]
-     (vec (u/successors p g/entities-node)))))
+     (vec (sort-entities-by-edge (u/successors p g/entities-node) p)))))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
   "Returns information about entity itself."
   ([entity :- s/Str]
    (let [p (model->program)]
      (dissoc (u/attrs p entity) :uuid)))
-  ([entity {:keys [model model-path] :as model-options}]
+  ([entity :- s/Str {:keys [model model-path] :as model-options}]
    (let [p (resolve-model-source model-options)]
      (dissoc (u/attrs p entity) :uuid))))
 
@@ -62,12 +70,9 @@
    Model itself also can be supplied."
   ([entity :- s/Str]
    (let [p (model->program)]
-     (mapv #(dissoc (u/attrs p %) :uuid) (u/successors p entity))))
-  ([entity {:keys [model-path model] :as model-options}]
+     (mapv #(dissoc (u/attrs p %) :uuid)
+           (sort-properties-by-edge (u/successors p entity) entity p))))
+  ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (let [p (resolve-model-source model-options)]
-     (mapv #(dissoc (u/attrs p %) :uuid) (u/successors p entity)))))
-
-;;;;;; play
-;; (u/viz-graph (model->program))
-;; (entity-properties (first (all-entities)))
-;;;;;;
+     (mapv #(dissoc (u/attrs p %) :uuid)
+           (sort-properties-by-edge (u/successors p entity) entity p)))))
