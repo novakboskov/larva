@@ -46,7 +46,7 @@
   (if-let [model-atom @program-model] (g/->graph model-atom)
           (if model (g/->graph model) (-> path slurp edn/read-string g/->graph))))
 
-(defn- resolve-model-source [{:keys [model-path model]}]
+(defn- resolve-program [{:keys [model-path model]}]
   (cond model      (model->program :model model)
         model-path (model->program :path model-path)
         :else      (model->program)))
@@ -58,7 +58,7 @@
   ([] (let [p (model->program)]
         (vec (sort-by-edge (u/successors p g/entities-node) p))))
   ([{:keys [model-path model] :as model-options}]
-   (let [p (resolve-model-source model-options)]
+   (let [p (resolve-program model-options)]
      (vec (sort-by-edge (u/successors p g/entities-node) p)))))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
@@ -67,7 +67,7 @@
    (let [p (model->program)]
      (dissoc (u/attrs p entity) :uuid)))
   ([entity :- s/Str {:keys [model model-path] :as model-options}]
-   (let [p (resolve-model-source model-options)]
+   (let [p (resolve-program model-options)]
      (dissoc (u/attrs p entity) :uuid))))
 
 (s/defn ^:always-validate entity-properties :- APIProperties
@@ -79,7 +79,7 @@
      (mapv #(dissoc (u/attrs p %) :uuid)
            (sort-by-edge (u/successors p entity) entity p))))
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
-   (let [p (resolve-model-source model-options)]
+   (let [p (resolve-program model-options)]
      (mapv #(dissoc (u/attrs p %) :uuid)
            (sort-by-edge (u/successors p entity) entity p)))))
 
