@@ -47,9 +47,9 @@
           (if model (g/->graph model) (-> path slurp edn/read-string g/->graph))))
 
 (defn- resolve-model-source [{:keys [model-path model]}]
-  (cond model (model->program :model model)
+  (cond model      (model->program :model model)
         model-path (model->program :path model-path)
-        :else (model->program)))
+        :else      (model->program)))
 
 (s/defn ^:always-validate all-entities :- APIEntities
   "Returns signatures of all entities in program.

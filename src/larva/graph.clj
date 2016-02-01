@@ -41,41 +41,41 @@
    order :- s/Int]
   (cond
     (contains? prop-type :coll) (str "reference:[" order "] collection")
-    (contains? prop-type :one) (str "reference:[" order "] one")))
+    (contains? prop-type :one)  (str "reference:[" order "] one")))
 
 (s/defn ^{:always-validate true :private true} build-property-map
   [property :- Property]
-  (let [type (if-let [pt (-> property :type)] {:type pt} {})
+  (let [type      (if-let [pt (-> property :type)] {:type pt} {})
         gui-label (if-let [gl (-> property :gui-label)] {:gui-label gl} {})
-        name {:name (:name property)}
-        uuid {:uuid (node-uuid)}]
+        name      {:name (:name property)}
+        uuid      {:uuid (node-uuid)}]
     (merge name uuid type gui-label)))
 
 (s/defn ^{:always-validate true :private true}
   build-entity-map
   [entity :- Entity]
   (let [signature {:signature (:signature entity)}
-        uuid {:uuid (node-uuid)}
-        plural (if-let [pl (:plural entity)] {:plural pl} {})]
+        uuid      {:uuid (node-uuid)}
+        plural    (if-let [pl (:plural entity)] {:plural pl} {})]
     (merge signature uuid plural)))
 
 (s/defn ^{:always-validate true :private true}
-  add-property-reference :- {:graph ubergraph.core.Ubergraph
+  add-property-reference :- {:graph      ubergraph.core.Ubergraph
                              :next-order s/Int}
   "Add property->entity references."
   [graph :- ubergraph.core.Ubergraph property :- Property
    parent :- s/Str next-order :- s/Int]
   (if (or (= :ref-to (get-in property [:type :coll]))
           (= :ref-to (get-in property [:type :one])))
-    {:graph (g/add-edges graph [(build-property-label property parent)
-                                (get-in property [:type :signature])
-                                {:label (build-reference-edge-label
-                                         (:type property) next-order)
-                                 :cardinality
-                                 (cond
-                                   (contains? (:type property) :coll) :coll
-                                   (contains? (:type property) :one) :one)
-                                 :order next-order :color :green}])
+    {:graph      (g/add-edges graph [(build-property-label property parent)
+                                     (get-in property [:type :signature])
+                                     {:label (build-reference-edge-label
+                                              (:type property) next-order)
+                                      :cardinality
+                                      (cond
+                                        (contains? (:type property) :coll) :coll
+                                        (contains? (:type property) :one)  :one)
+                                      :order next-order :color :green}])
      :next-order (inc next-order)}
     {:graph graph :next-order next-order}))
 
@@ -99,7 +99,7 @@
       {:graph g :next-order po})))
 
 (s/defn ^{:always-validate true :private true}
-  add-entitiy-node :- {:graph ubergraph.core.Ubergraph :next-order s/Int
+  add-entitiy-node :- {:graph      ubergraph.core.Ubergraph :next-order s/Int
                        :node-label s/Str}
   "Adds entity node."
   [graph :- ubergraph.core.Ubergraph
@@ -120,14 +120,14 @@
 entity-order for next entity."
   [graph :- ubergraph.core.Ubergraph
    entity :- Entity entity-order]
-  (let [g-w-node (add-entitiy-node graph entity entity-order)
+  (let [g-w-node  (add-entitiy-node graph entity entity-order)
         g-w-props (add-properties (:graph g-w-node) (:node-label g-w-node)
                                   (:properties entity) (:next-order g-w-node))]
-    {:graph (:graph g-w-props)
+    {:graph      (:graph g-w-props)
      :next-order (:next-order g-w-props)}))
 
 (s/defn ^{:always-validate true :private true}
-  add-entities-beginning-node :- {:graph ubergraph.core.Ubergraph
+  add-entities-beginning-node :- {:graph      ubergraph.core.Ubergraph
                                   :next-order s/Int}
   [graph :- ubergraph.core.Ubergraph order :- s/Int]
   {:graph
@@ -144,10 +144,10 @@ entity-order for next entity."
    about :- About cmd-order :- s/Int]
   {:graph
    (-> (g/add-nodes-with-attrs graph [about-node-label
-                                      {:name (:name about)
-                                       :author (:author about)
+                                      {:name    (:name about)
+                                       :author  (:author about)
                                        :comment (:comment about)
-                                       :uuid (node-uuid)}])
+                                       :uuid    (node-uuid)}])
        (g/add-edges [root-node about-node-label {:label (build-about-edge-label cmd-order)
                                                  :order cmd-order}]))
    :next-order (inc cmd-order)})
@@ -167,21 +167,21 @@ entity-order for next entity."
 (s/defn ^:always-validate ->graph :- ubergraph.core.Ubergraph
   "Transforms standard application program (uni-model) to its graph representation."
   [program :- Program]
-  (let [about (:about program)
-        meta_data (:meta program)
-        bare-graph {:graph (g/digraph root-node) :next-order 1}
+  (let [about            (:about program)
+        meta_data        (:meta program)
+        bare-graph       {:graph (g/digraph root-node) :next-order 1}
         graph-with-about (if about (add-about (:graph bare-graph) about 1)
                              bare-graph)
-        graph-with-meta (if meta_data
-                          (add-meta (:graph graph-with-about) meta_data
-                                    (:next-order graph-with-about))
-                          graph-with-about)
-        entities (:entities program)
-        graph (if (> (count entities) 0)
-                (add-entities-beginning-node (:graph graph-with-meta)
-                                             (:next-order graph-with-meta))
-                graph-with-meta)
-        entity-order (:next-order graph)]
+        graph-with-meta  (if meta_data
+                           (add-meta (:graph graph-with-about) meta_data
+                                     (:next-order graph-with-about))
+                           graph-with-about)
+        entities         (:entities program)
+        graph            (if (> (count entities) 0)
+                           (add-entities-beginning-node (:graph graph-with-meta)
+                                                        (:next-order graph-with-meta))
+                           graph-with-meta)
+        entity-order     (:next-order graph)]
     ;; adding entities to graph
     (loop [g graph ents entities eo entity-order]
       (if (> (count ents) 0)

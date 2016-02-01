@@ -37,7 +37,7 @@
   [{:keys [paths options connection]}]
   (loop [dir-paths paths queries []]
     (if (-> dir-paths count (> 0))
-      (let [dir (first dir-paths)
+      (let [dir  (first dir-paths)
             sqls (for [file (file-seq (-> dir io/resource io/file))
                        :let [name (.getName file)]
                        :when
@@ -65,15 +65,17 @@
                               item (case what
                                      :values name
                                      :insert (str ":" name)
-                                     :set (str name " = :" name))] item)
+                                     :set    (str name " = :" name))] item)
                         (str ", ") (str %1))
                   (reduce "" properties) (cs/replace-first ", " ""))]
     (case what
       (or :values :insert) (str "(" items ")")
-      :set items)))
+      :set                 items)))
 
 (defn build-plural-for-entity
+  "If program specifies entity plural it will be return, otherwise it will be
+  constructed using suffix 's'."
   [entity-signature model-source]
   (let [entity (api/entity-info entity-signature model-source)]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
-          (str (drill-out-name-for-db entity-signature) "s"))))
+            (str (drill-out-name-for-db entity-signature) "s"))))

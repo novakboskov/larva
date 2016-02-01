@@ -41,10 +41,10 @@
   (let [timestamp (.format
                    (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
                    (java.util.Date.))]
-    {:core ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
+    {:core           ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
      :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries ["resources/sql/queries.sql" "db/sql/queries.sql"]
-     :core-test ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
+     :queries        ["resources/sql/queries.sql" "db/sql/queries.sql"]
+     :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-users-table.up.sql") "db/migrations/add-users-table.up.sql"]
      :migrations-sql-down

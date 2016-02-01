@@ -58,7 +58,7 @@
 
 (deftest entity-plural-test
   (testing "Presence and names of plurals in entity definition."
-    (let [g (lg/->graph entities-with-signature-plural)
+    (let [g  (lg/->graph entities-with-signature-plural)
           g1 (lg/->graph standard-program-with-meta)]
       (is (= ["Bands" "Categories"]
              (mapv #(:plural (g/attrs g %)) ["Band" "Category"])))
@@ -70,14 +70,14 @@
 (deftest property-reference-test
   (testing "References of properties. References represent property-entity
 relationships with their cardinality."
-    (let [p0 {:name "honors" :type {:coll :str}}
+    (let [p0  {:name "honors" :type {:coll :str}}
           p01 {:name "nickname" :type :str :gui-label "nick"}
-          p1 {:name "subcategories" :type {:coll :ref-to :signature "Category"}
-              :gui-label "subcategories"}
-          p2 {:name "band" :type {:one :ref-to :signature "Band"}
-              :gui-label "Of band"}
-          p3 {:name "bands" :type {:coll :ref-to :signature "Band"}
-              :gui-label "participant bands"}]
+          p1  {:name      "subcategories" :type {:coll :ref-to :signature "Category"}
+               :gui-label "subcategories"}
+          p2  {:name      "band" :type {:one :ref-to :signature "Band"}
+               :gui-label "Of band"}
+          p3  {:name      "bands" :type {:coll :ref-to :signature "Band"}
+               :gui-label "participant bands"}]
       (is (= 0
              (-> (lg/->graph standard-program-no-refs)
                  (g/out-edges (lg/build-property-label p0 "Musician"))
@@ -102,26 +102,26 @@ relationships with their cardinality."
 
 (deftest property-reference-cardinality-test
   (testing "Cardinality of the property-entity relationships."
-    (let [g (lg/->graph references-1)
-          p1 {:name "band" :type {:one :ref-to :signature "Band"}
+    (let [g  (lg/->graph references-1)
+          p1 {:name      "band" :type {:one :ref-to :signature "Band"}
               :gui-label "Of band"}
-          p2 {:name "bands" :type {:coll :ref-to :signature "Band"}
+          p2 {:name      "bands" :type {:coll :ref-to :signature "Band"}
               :gui-label "participant bands"}
-          p3 {:name "members" :type {:coll :ref-to :signature "Musician"}
+          p3 {:name      "members" :type {:coll :ref-to :signature "Musician"}
               :gui-label "Members"}]
-      (let [edges (g/find-edges g {:src (lg/build-property-label p1 "Musician")
+      (let [edges (g/find-edges g {:src  (lg/build-property-label p1 "Musician")
                                    :dest "Band"})]
         (is (= 1 (count edges)))
         (is (= :one (->> (first edges)
                          ((fn [edge] [(:src edge) (:dest edge)]))
                          (g/attrs g) :cardinality))))
-      (let [edges (g/find-edges g {:src (lg/build-property-label p2 "Festival")
+      (let [edges (g/find-edges g {:src  (lg/build-property-label p2 "Festival")
                                    :dest "Band"})]
         (is (= 1 (count edges)))
         (is (= :coll (->> (first edges)
                           ((fn [edge] [(:src edge) (:dest edge)]))
                           (g/attrs g) :cardinality))))
-      (let [edges (g/find-edges g {:src (lg/build-property-label p3 "Band")
+      (let [edges (g/find-edges g {:src  (lg/build-property-label p3 "Band")
                                    :dest "Musician"})]
         (is (= 1 (count edges)))
         (is (= :coll (->> (first edges)
@@ -131,27 +131,27 @@ relationships with their cardinality."
 (deftest cardinality-graph-presentation-test
   (testing "If cardinality expressed through uni-model is established in graph
  representation of the program."
-    (let [g (lg/->graph references-1)
-          band-particip {:name "participated" :type {:coll :ref-to :signature
-                                                     "Festival"}
+    (let [g             (lg/->graph references-1)
+          band-particip {:name      "participated" :type {:coll :ref-to :signature
+                                                          "Festival"}
                          :gui-label "Participated in"}
-          fest-bands {:name "bands" :type {:coll :ref-to :signature "Band"}
-                      :gui-label "participant bands"}
-          mus-soc-prof {:name "social-profile" :type {:one :ref-to :signature
-                                                      "SocialMediaProfile"}
-                        :gui-label "profile"}
-          prof-owner {:name "owner" :type {:one :ref-to :signature "Musician"}
-                      :gui-label "Name"}
-          band-categ {:name "category" :type {:one :ref-to :signature "Category"}
-                      :gui-label "Category"}
-          categ-bands {:name "bands" :type {:coll :ref-to :signature "Band"}
-                       :gui-label "participant bands"}]
+          fest-bands    {:name      "bands" :type {:coll :ref-to :signature "Band"}
+                         :gui-label "participant bands"}
+          mus-soc-prof  {:name      "social-profile" :type {:one :ref-to :signature
+                                                            "SocialMediaProfile"}
+                         :gui-label "profile"}
+          prof-owner    {:name      "owner" :type {:one :ref-to :signature "Musician"}
+                         :gui-label "Name"}
+          band-categ    {:name      "category" :type {:one :ref-to :signature "Category"}
+                         :gui-label "Category"}
+          categ-bands   {:name      "bands" :type {:coll :ref-to :signature "Band"}
+                         :gui-label "participant bands"}]
       ;; many->many
       (let [es-band->fest
-            (g/find-edges g {:src (lg/build-property-label band-particip "Band")
+            (g/find-edges g {:src  (lg/build-property-label band-particip "Band")
                              :dest "Festival"})
             es-fest->band
-            (g/find-edges g {:src (lg/build-property-label fest-bands "Festival")
+            (g/find-edges g {:src  (lg/build-property-label fest-bands "Festival")
                              :dest "Band"})]
         (is (= 1 (count es-band->fest)))
         (is (= :coll (:cardinality (g/attrs g (first es-band->fest)))))
@@ -159,11 +159,11 @@ relationships with their cardinality."
         (is (= :coll (:cardinality (g/attrs g (first es-fest->band))))))
       ;; one->one
       (let [es-mus->profile
-            (g/find-edges g {:src (lg/build-property-label mus-soc-prof "Musician")
+            (g/find-edges g {:src  (lg/build-property-label mus-soc-prof "Musician")
                              :dest "SocialMediaProfile"})
             es-profile->mus
-            (g/find-edges g {:src (lg/build-property-label prof-owner
-                                                           "SocialMediaProfile")
+            (g/find-edges g {:src  (lg/build-property-label prof-owner
+                                                            "SocialMediaProfile")
                              :dest "Musician"})]
         (is (= 1 (count es-mus->profile)))
         (is (= :one (:cardinality (g/attrs g (first es-mus->profile)))))
@@ -171,10 +171,10 @@ relationships with their cardinality."
         (is (= :one (:cardinality (g/attrs g (first es-profile->mus))))))
       ;; one->many
       (let [es-band->categ
-            (g/find-edges g {:src (lg/build-property-label band-categ "Band")
+            (g/find-edges g {:src  (lg/build-property-label band-categ "Band")
                              :dest "Category"})
             es-categ->band
-            (g/find-edges g {:src (lg/build-property-label categ-bands "Category")
+            (g/find-edges g {:src  (lg/build-property-label categ-bands "Category")
                              :dest "Band"})]
         (is (= 1 (count es-band->categ)))
         (is (= :one (:cardinality (g/attrs g (first es-band->categ)))))

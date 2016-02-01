@@ -9,7 +9,7 @@
   [s/Str])
 
 (s/def APIEntityInfo
-  {:signature s/Str(s/optional-key :plural) s/Str})
+  {:signature s/Str (s/optional-key :plural) s/Str})
 
 (def APISimpleDataType mm/SimpleDataType)
 
