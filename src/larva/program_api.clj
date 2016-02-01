@@ -5,18 +5,24 @@
              [graph :as g]
              [program-api-schemes :refer :all]]
             [schema.core :as s]
-            [ubergraph.core :as u]))
+            [ubergraph.core :as u]
+            [larva.utils :refer [parse-project-clj]]))
 
 (defonce ^:private program-model (atom nil))
 
 (defn- extract-property-name [property]
   (first (clojure.string/split property #"#")))
 
-(defn- sort-entities-by-edge [entities program]
+(defmulti ^:private sort-by-edge
+  (fn [first second & third] (if third :properties :entities)))
+
+(defmethod sort-by-edge :entities
+  [entities program]
   (sort-by #(:order (u/attrs program (u/find-edge program g/entities-node %)))
            entities))
 
-(defn- sort-properties-by-edge [properties entity program]
+(defmethod sort-by-edge :properties
+  [properties entity program]
   (sort-by #(:order (u/attrs program (u/find-edge program entity %))) properties))
 
 (def ^:private default-model-path "larva_src/larva.clj")
@@ -50,10 +56,10 @@
    Path to program model can be supplied otherwise default is be used.
    Model itself also can be supplied."
   ([] (let [p (model->program)]
-        (vec (sort-entities-by-edge (u/successors p g/entities-node) p))))
+        (vec (sort-by-edge (u/successors p g/entities-node) p))))
   ([{:keys [model-path model] :as model-options}]
    (let [p (resolve-model-source model-options)]
-     (vec (sort-entities-by-edge (u/successors p g/entities-node) p)))))
+     (vec (sort-by-edge (u/successors p g/entities-node) p)))))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
   "Returns information about entity itself."
@@ -71,8 +77,16 @@
   ([entity :- s/Str]
    (let [p (model->program)]
      (mapv #(dissoc (u/attrs p %) :uuid)
-           (sort-properties-by-edge (u/successors p entity) entity p))))
+           (sort-by-edge (u/successors p entity) entity p))))
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (let [p (resolve-model-source model-options)]
      (mapv #(dissoc (u/attrs p %) :uuid)
-           (sort-properties-by-edge (u/successors p entity) entity p)))))
+           (sort-by-edge (u/successors p entity) entity p)))))
+
+(defn project-name
+  "Return project name. Parsing project.clj if it is available."
+  []
+  (try
+    (parse-project-clj (slurp "project.clj"))
+    (catch Exception e (str "project.clj is not fund in root of your project: "
+                            (.getMessage e)))))

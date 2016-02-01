@@ -3,7 +3,8 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as cs]
             [conman.core :as conman]
-            [yesql.core :refer [defqueries]]))
+            [yesql.core :refer [defqueries]]
+            [larva.program-api :as api]))
 
 (def objects (atom {}))
 

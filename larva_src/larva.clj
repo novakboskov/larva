@@ -1,5 +1,5 @@
 {:about
- {:name "Pilot model"
+ {:name "Pilot"
   :author "Novak Boskov"
   :comment "This is just in the sake of a proof of concept."}
  :meta
