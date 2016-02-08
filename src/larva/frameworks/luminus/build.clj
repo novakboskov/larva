@@ -1,8 +1,9 @@
 (ns larva.frameworks.luminus.build
-  (:require [larva.db.utils :as db]
+  (:require [larva.code-gen.common :refer [render-assets]]
+            [larva.db.utils :as db]
             [larva.program-api :as api]
             [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]
-            [larva.code-gen.common :refer [render-assets]]))
+            [larva.frameworks.luminus.stuff :as stuff]))
 
 (defn- build-api-args-map
   [{:keys [model-path model]}]
@@ -14,18 +15,21 @@
   [options]
   (let [args     (build-api-args-map options)
         entities (if args (api/all-entities args) (api/all-entities))]
-    (doseq [ent-sign entities]
-      (let [props             (if args (api/entity-properties ent-sign args)
-                                  (api/entity-properties ent-sign))
-            entity-plural     (db/build-plural-for-entity ent-sign args)
-            properties        (db/build-sequence-string props :insert)
-            values-properties (db/build-sequence-string props :values)
-            set-properties    (db/build-sequence-string props :set)]
+    (doseq [entity entities]
+      (let [props (if args (api/entity-properties entity args)
+                      (api/entity-properties entity))
+            db-options
+            {:entity            (db/drill-out-name-for-db entity)
+             :entity-plural     (db/build-plural-for-entity entity args)
+             :properties        (db/build-sequence-string props :insert)
+             :values-properties (db/build-sequence-string props :values)
+             :set-properties    (db/build-sequence-string props :set)}]
         ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
         ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace
         ;; then to produce complete new file resources/templates/frameworks/luminus/larva-specific/db/src/sql.db.clj
         ;; maybe user wants to add some more code in this file, model refreshing should not affect that code.
-        (render-assets [] (:render-options options))))))
+        (render-assets [(:queries (stuff/relational-db-files))]
+                       (merge db-options (:render-options options)))))))
 
 (defn make
   "Generate Luminus project from larva meta-model pointed to by path.
@@ -43,6 +47,4 @@
 ;;;;;;play
 ;; (make)
 ;; (->files {:name "this-and-here"} ["ovde/je/ovo.clj" "Hello World!"])
-;; (defn resource [r]
-;;   (->> r (str "larva/frameworks/luminus/assets/core/resources/") (io/resource)))
 ;;;;;;

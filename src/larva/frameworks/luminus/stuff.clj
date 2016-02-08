@@ -1,5 +1,6 @@
 (ns larva.frameworks.luminus.stuff
-  "All variables and building material specific to a Luminus project.")
+  "All variables and building material specific to a Luminus project."
+  (:require [clojure.java.io :refer [resource]]))
 
 (def core-assets
   [[".gitignore" "core/gitignore"]
@@ -37,13 +38,13 @@
    ;; tests
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
-(defn relational-db-files [options]
+(defn relational-db-files []
   (let [timestamp (.format
                    (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
                    (java.util.Date.))]
     {:core           ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
      :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries        ["resources/sql/queries.sql" "db/sql/queries.sql"]
+     :queries        ["resources/sql/{{entity-plural}}_queries.sql" "frameworks/luminus/larva-specific/db/sql/queries.sql"]
      :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-users-table.up.sql") "db/migrations/add-users-table.up.sql"]

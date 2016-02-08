@@ -1,7 +1,9 @@
 (ns larva.code-gen.common
   "Code taken from luminus-template.
   See: https://github.com/luminus-framework/luminus-template"
-  (:require [leiningen.new.templates :refer [renderer ->files]]
+  (:require [clojure.java.io :as io]
+            [larva.my.leiningen.new.templates :as mylnt]
+            [leiningen.new.templates :as lnt]
             [selmer.parser :as selmer]))
 
 (defn render-template [template options]
@@ -10,7 +12,7 @@
    options
    {:tag-open \< :tag-close \> :filter-open \< :filter-close \>}))
 
-(defonce larva-render (renderer "larva" render-template))
+(defonce larva-render (mylnt/renderer "larva" render-template "templates"))
 
 (defn render-asset [render options asset]
   (if (string? asset)
@@ -19,4 +21,5 @@
       [target (larva-render source options)])))
 
 (defn render-assets [assets options]
-  (apply ->files options (map #(render-asset options %) assets)))
+  (binding [lnt/*dir* "."]
+    (apply lnt/->files options (map #(render-asset larva-render options %) assets))))

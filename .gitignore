@@ -5,8 +5,11 @@ pom.xml
 pom.xml.asc
 *.jar
 *.class
+*.org
 /.lein-*
 /.nrepl-port
 .hgignore
 .hg/
 .nrepl-port
+# files generated from larva itself when playing around
+/resources/sql/
