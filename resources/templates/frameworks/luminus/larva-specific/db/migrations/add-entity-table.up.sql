@@ -1,2 +1,2 @@
-CREATE TABLE <<entity>>
-(<% for property in properties %> <<property>> <% endfor %>);
+CREATE TABLE <<entity-plural>>
+<<props-create-table>>;

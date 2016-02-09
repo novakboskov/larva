@@ -57,20 +57,36 @@
 (defn drill-out-name-for-db [name]
   (-> name (cs/replace #"[^a-zA-Z0-9]" "_") cs/lower-case))
 
-(defn build-sequence-string
-  "Builds string suited for INSERT or VALUES SQL statement.
-  What can be either :insert or :values or :set."
-  [properties what]
-  (let [items (-> #(->> (let [name (drill-out-name-for-db (:name %2))
-                              item (case what
-                                     :values name
-                                     :insert (str ":" name)
-                                     :set    (str name " = :" name))] item)
-                        (str ", ") (str %1))
-                  (reduce "" properties) (cs/replace-first ", " ""))]
-    (case what
-      (or :values :insert) (str "(" items ")")
-      :set                 items)))
+(defmulti build-sequence-string
+  "Builds string suited for INSERT, CREATE TABLE or VALUES SQL statement.
+  What can be either :insert, :create-table, :values or :set."
+  (fn [properties what] what))
+
+(defmethod build-sequence-string :insert
+  [properties _]
+  (str "("
+       (cs/replace-first
+        (reduce #(->> (drill-out-name-for-db (:name %2)) (str ":") (str ", ")
+                      (str %1)) "" properties)
+        ", " "")
+       ")"))
+
+(defmethod build-sequence-string :values
+  [properties _]
+  (str "("
+       (cs/replace-first
+        (reduce #(->> (drill-out-name-for-db (:name %2)) (str ", ")
+                      (str %1)) "" properties)
+        ", " "")
+       ")"))
+
+(defmethod build-sequence-string :set
+  [properties _]
+  (cs/replace-first
+   (reduce #(let [name (drill-out-name-for-db (:name %2))]
+              (->> (str name " = :" name) (str ", ")
+                   (str %1))) "" properties)
+   ", " ""))
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be

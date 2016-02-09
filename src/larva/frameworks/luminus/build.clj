@@ -19,11 +19,12 @@
       (let [props (if args (api/entity-properties entity args)
                       (api/entity-properties entity))
             db-options
-            {:entity            (db/drill-out-name-for-db entity)
-             :entity-plural     (db/build-plural-for-entity entity args)
-             :properties        (db/build-sequence-string props :insert)
-             :values-properties (db/build-sequence-string props :values)
-             :set-properties    (db/build-sequence-string props :set)}]
+            {:entity             (db/drill-out-name-for-db entity)
+             :entity-plural      (db/build-plural-for-entity entity args)
+             :properties         (db/build-sequence-string props :insert)
+             :values-properties  (db/build-sequence-string props :values)
+             :set-properties     (db/build-sequence-string props :set)
+             :props-create-table (db/build-sequence-string props :create-table)}]
         ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
         ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace
         ;; then to produce complete new file resources/templates/frameworks/luminus/larva-specific/db/src/sql.db.clj
