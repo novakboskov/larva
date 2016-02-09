@@ -19,9 +19,9 @@
 
 (deftest root-successors-names-test
   (testing "Root node successors names."
-    (is (= #{"about" "meta" :entities} (-> (lg/->graph standard-program-with-meta)
-                                           (g/successors lg/root-node)
-                                           set)))))
+    (is (= #{:about :meta :entities} (-> (lg/->graph standard-program-with-meta)
+                                         (g/successors lg/root-node)
+                                         set)))))
 
 (deftest entities-successors-test
   (testing "Number of entities-dispatch-node successors."

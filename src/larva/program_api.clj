@@ -27,6 +27,14 @@
 
 (def ^:private default-model-path "larva_src/larva.clj")
 
+(defn project-name
+  "Return project name. Parsing project.clj if it is available."
+  []
+  (try
+    (parse-project-clj (slurp "project.clj"))
+    (catch Exception e (str "project.clj is not fund in root of your project: "
+                            (.getMessage e)))))
+
 (defn reset-program-model
   "Sets program model to be used."
   [model]
@@ -51,42 +59,61 @@
         model-path (model->program :path model-path)
         :else      (model->program)))
 
+(defn- get-all-entities
+  [program]
+  (vec (sort-by-edge (u/successors program g/entities-node) program)))
+
 (s/defn ^:always-validate all-entities :- APIEntities
   "Returns signatures of all entities in program.
    Path to program model can be supplied otherwise default is be used.
    Model itself also can be supplied."
-  ([] (let [p (model->program)]
-        (vec (sort-by-edge (u/successors p g/entities-node) p))))
+  ([] (get-all-entities (model->program)))
   ([{:keys [model-path model] :as model-options}]
-   (let [p (resolve-program model-options)]
-     (vec (sort-by-edge (u/successors p g/entities-node) p)))))
+   (get-all-entities (resolve-program model-options))))
+
+(defn- get-entity-info
+  [p entity]
+  (dissoc (u/attrs p entity) :uuid))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
   "Returns information about entity itself."
   ([entity :- s/Str]
-   (let [p (model->program)]
-     (dissoc (u/attrs p entity) :uuid)))
+   (get-entity-info (model->program) entity))
   ([entity :- s/Str {:keys [model model-path] :as model-options}]
-   (let [p (resolve-program model-options)]
-     (dissoc (u/attrs p entity) :uuid))))
+   (get-entity-info (resolve-program model-options) entity)))
+
+(defn- get-entity-properties
+  [program entity]
+  (mapv #(dissoc (u/attrs program %) :uuid)
+        (sort-by-edge (u/successors program entity) entity program)))
 
 (s/defn ^:always-validate entity-properties :- APIProperties
   "Returns properties of an entity given by signature.
    Path to program model can be supplied otherwise default is be used.
    Model itself also can be supplied."
   ([entity :- s/Str]
-   (let [p (model->program)]
-     (mapv #(dissoc (u/attrs p %) :uuid)
-           (sort-by-edge (u/successors p entity) entity p))))
+   (get-entity-properties (model->program) entity))
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
-   (let [p (resolve-program model-options)]
-     (mapv #(dissoc (u/attrs p %) :uuid)
-           (sort-by-edge (u/successors p entity) entity p)))))
+   (get-entity-properties (resolve-program model-options) entity)))
 
-(defn project-name
-  "Return project name. Parsing project.clj if it is available."
-  []
-  (try
-    (parse-project-clj (slurp "project.clj"))
-    (catch Exception e (str "project.clj is not fund in root of your project: "
-                            (.getMessage e)))))
+(defn- get-program-meta
+  [program]
+  (if (contains? (u/nodes program) g/meta-node-label)
+    (dissoc (u/attrs program g/meta-node-label) :uuid) {}))
+
+(s/defn program-meta :- APIMeta
+  "Returns meta section of a program."
+  ([] (get-program-meta (model->program)))
+  ([{:keys [model-path model] :as model-options}]
+   (get-program-meta (resolve-program model-options))))
+
+(defn- get-program-about
+  [program]
+  (if (contains? (u/nodes program) g/about-node-label)
+    (dissoc (u/attrs program g/about-node-label) :uuid) {}))
+
+(s/defn program-about :- APIAbout
+  "Returns meta section of program."
+  ([] (get-program-about (model->program)))
+  ([{:keys [model-path model] :as model-options}]
+   (get-program-about (resolve-program model-options))))

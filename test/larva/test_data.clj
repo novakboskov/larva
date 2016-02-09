@@ -183,7 +183,8 @@
     :author  "Novak Boskov"
     :comment "This is just in the sake of a proof of concept."}
    :meta
-   {:api-only false}
+   {:api-only false
+    :db       :postgres}
    :entities
    [{:signature  "Musician"
      :properties [{:name "name" :type :str :gui-label "Name"}
@@ -296,3 +297,8 @@
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]})
+
+(def no-entities-no-about-empty-meta
+  {:meta {}
+   :entities
+   []})

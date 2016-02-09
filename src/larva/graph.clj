@@ -9,9 +9,9 @@
 (defn node-uuid []
   (java.util.UUID/randomUUID))
 
-(def about-node-label "about")
+(def about-node-label :about)
 
-(def meta-node-label "meta")
+(def meta-node-label :meta)
 
 (def root-node :program)
 
@@ -58,6 +58,21 @@
         uuid      {:uuid (node-uuid)}
         plural    (if-let [pl (:plural entity)] {:plural pl} {})]
     (merge signature uuid plural)))
+
+(s/defn ^{:always-validate true :private true} build-about-map
+  [about :- About]
+  (let [name (if-let [name (:name about)] {:name name} {})
+        author (if-let [author (:author about)] {:author author} {})
+        comment (if-let [comment (:comment about)] {:comment comment} {})
+        uuid {:uuid (node-uuid)}]
+    (merge name author comment uuid)))
+
+(s/defn ^{:always-validate true :private true} build-meta-data-map
+  [meta-data :- Meta]
+  (let [api-only (if-let [ao (-> (:api-only meta-data) nil? not)] {:api-only ao} {})
+        db (if-let [db (:db meta-data)] {:db db} {})
+        uuid {:uuid (node-uuid)}]
+    (merge api-only db uuid)))
 
 (s/defn ^{:always-validate true :private true}
   add-property-reference :- {:graph      ubergraph.core.Ubergraph
@@ -144,10 +159,7 @@ entity-order for next entity."
    about :- About cmd-order :- s/Int]
   {:graph
    (-> (g/add-nodes-with-attrs graph [about-node-label
-                                      {:name    (:name about)
-                                       :author  (:author about)
-                                       :comment (:comment about)
-                                       :uuid    (node-uuid)}])
+                                      (build-about-map about)])
        (g/add-edges [root-node about-node-label {:label (build-about-edge-label cmd-order)
                                                  :order cmd-order}]))
    :next-order (inc cmd-order)})
@@ -156,10 +168,10 @@ entity-order for next entity."
   add-meta :- {:graph ubergraph.core.Ubergraph :next-order s/Int}
   "Adds whole meta node."
   [graph :- ubergraph.core.Ubergraph
-   meta_data :- Meta cmd-order :- s/Int]
+   meta-data :- Meta cmd-order :- s/Int]
   {:graph
    (-> (g/add-nodes-with-attrs graph [meta-node-label
-                                      {:api-only (:api-only meta_data)}])
+                                      (build-meta-data-map meta-data)])
        (g/add-edges [root-node meta-node-label {:label (build-meta-node-label cmd-order)
                                                 :order cmd-order}]))
    :next-order (inc cmd-order)})

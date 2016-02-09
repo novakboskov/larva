@@ -3,7 +3,10 @@
   (:require [schema.core :as s]))
 
 (s/def SimpleDataType
-  (s/enum :str :num :geo :datetime))
+  (s/enum :str :text
+          :num :float
+          :datetime :date :timestamp
+          :bool :geo :json :binary))
 
 (s/def Collection
   "Simple collection property."
@@ -49,9 +52,13 @@
 (s/def Entities
   [Entity])
 
+(s/def DBTypes
+  (s/enum :postgres :mysql :h2))
+
 (s/def Meta
   "Schema for meta section of program."
-  {:api-only s/Bool})
+  {(s/optional-key :api-only) s/Bool
+   (s/optional-key :db) DBTypes})
 
 (s/def About
   "Schema for about section of program."

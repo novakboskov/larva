@@ -63,3 +63,31 @@
               {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}
               {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]
              (api/entity-properties "Band")))))))
+
+(deftest program-meta-data-test
+  (testing "Returned meta data from program."
+    (eval-in-program-model-context
+     standard-program-with-meta
+     (is (= {:api-only true :db :postgres}
+            (api/program-meta))))
+    (is (= {:api-only true :db :postgres}
+           (api/program-meta {:model standard-program-with-meta})))
+    (is (= {} (api/program-meta {:model no-entities-no-about-edge-case})))
+    (eval-in-program-model-context
+     no-entities-edge-case
+     (is (= {} (api/program-meta))))
+    (eval-in-program-model-context
+     no-entities-no-about-empty-meta
+     (is (= {} (api/program-meta))))))
+
+(deftest program-about-test
+  (testing "Returned about section of a program"
+    (eval-in-program-model-context
+     no-entities-no-about-empty-meta
+     (is (= {} (api/program-about))))
+    (is (= {} (api/program-about {:model no-entities-no-about-edge-case})))
+    (eval-in-program-model-context
+     standard-program-1
+     (is (= {:name    "Pilot model" :author "Novak Boskov"
+             :comment "This is just in the sake of a proof of concept."}
+            (api/program-about))))))

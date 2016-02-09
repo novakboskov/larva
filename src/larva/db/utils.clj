@@ -7,6 +7,12 @@
             [larva.program-api :as api]))
 
 (def objects (atom {}))
+(defonce db (atom nil))
+
+(defn infer-db-type
+  [args]
+  ;; TODO:
+  )
 
 (defn symbol-uuid []
   (java.util.UUID/randomUUID))
@@ -87,6 +93,11 @@
               (->> (str name " = :" name) (str ", ")
                    (str %1))) "" properties)
    ", " ""))
+
+(defmethod build-sequence-string :create-table
+  [properties _]
+  ;; TODO:
+  )
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be

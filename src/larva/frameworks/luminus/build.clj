@@ -15,6 +15,7 @@
   [options]
   (let [args     (build-api-args-map options)
         entities (if args (api/all-entities args) (api/all-entities))]
+    (db/infer-db-type args)
     (doseq [entity entities]
       (let [props (if args (api/entity-properties entity args)
                       (api/entity-properties entity))
@@ -33,10 +34,8 @@
                        (merge db-options (:render-options options)))))))
 
 (defn make
-  "Generate Luminus project from larva meta-model pointed to by path.
-  options are represented by a set which can contain following keys:
-  * model-only - generates only database(model) related code."
-  [& {:keys [model-path model options] :as args}]
+  "Generate Luminus project from larva meta-model pointed to by path."
+  [& {:keys [model-path model] :as args}]
   (let [name (api/project-name)
         render-options
         {:render-options {:name       (project-name name)
