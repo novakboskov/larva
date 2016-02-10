@@ -3,16 +3,37 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as cs]
             [conman.core :as conman]
-            [yesql.core :refer [defqueries]]
-            [larva.program-api :as api]))
+            [larva
+             [messages :as msg]
+             [program-api :as api]
+             [utils :as utils]]
+            [yesql.core :refer [defqueries]]))
 
 (def objects (atom {}))
-(defonce db (atom nil))
 
 (defn infer-db-type
-  [args]
-  ;; TODO:
-  )
+  "If :db key exists in :meta section of larva model it will be returned,
+  otherwise type of used database will be inferred from database drivers provided
+  in project.clj."
+  [& args]
+  (or (:db (if args (apply api/program-meta args) (api/program-meta)))
+      (let [deps     (map #(str (first %)) (:dependencies
+                                            (utils/make-project-clj-map)))
+            matcher  #(re-matches (re-pattern (str "^.*" %1 ".*$")) %2)
+            db-types (reduce
+                      #(cond (matcher "postgres" %2) (conj %1 :postgres)
+                             (matcher "mysql" %2)    (conj %1 :mysql)
+                             (matcher "h2" %2)       (conj %1 :h2)
+                             (matcher "sqlite" %2)   (conj %1 :sqlite)
+                             (matcher "mongo" %2)    (conj %1 :mongo)) [] deps)
+            selected (first db-types)]
+        (cond (= (count db-types) 0)
+              (msg/warn (get-in msg/messages [:db-infer :no-infer]))
+              (> (count db-types) 1)
+              (do (msg/warn
+                   ((get-in msg/messages [:db-infer :multi-dbs-inferred])
+                    db-types selected)) selected)
+              :default selected))))
 
 (defn symbol-uuid []
   (java.util.UUID/randomUUID))
@@ -66,10 +87,10 @@
 (defmulti build-sequence-string
   "Builds string suited for INSERT, CREATE TABLE or VALUES SQL statement.
   What can be either :insert, :create-table, :values or :set."
-  (fn [properties what] what))
+  (fn [properties db-type what] what))
 
 (defmethod build-sequence-string :insert
-  [properties _]
+  [properties _ _]
   (str "("
        (cs/replace-first
         (reduce #(->> (drill-out-name-for-db (:name %2)) (str ":") (str ", ")
@@ -78,7 +99,7 @@
        ")"))
 
 (defmethod build-sequence-string :values
-  [properties _]
+  [properties _ _]
   (str "("
        (cs/replace-first
         (reduce #(->> (drill-out-name-for-db (:name %2)) (str ", ")
@@ -87,7 +108,7 @@
        ")"))
 
 (defmethod build-sequence-string :set
-  [properties _]
+  [properties _ _]
   (cs/replace-first
    (reduce #(let [name (drill-out-name-for-db (:name %2))]
               (->> (str name " = :" name) (str ", ")
@@ -95,7 +116,7 @@
    ", " ""))
 
 (defmethod build-sequence-string :create-table
-  [properties _]
+  [properties db-type _]
   ;; TODO:
   )
 

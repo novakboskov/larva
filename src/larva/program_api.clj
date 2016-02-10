@@ -9,6 +9,7 @@
             [larva.utils :refer [parse-project-clj]]))
 
 (defonce ^:private program-model (atom nil))
+(def ^:private default-model-path "larva_src/larva.clj")
 
 (defn- extract-property-name [property]
   (first (clojure.string/split property #"#")))
@@ -25,15 +26,10 @@
   [properties entity program]
   (sort-by #(:order (u/attrs program (u/find-edge program entity %))) properties))
 
-(def ^:private default-model-path "larva_src/larva.clj")
-
 (defn project-name
   "Return project name. Parsing project.clj if it is available."
   []
-  (try
-    (parse-project-clj (slurp "project.clj"))
-    (catch Exception e (str "project.clj is not fund in root of your project: "
-                            (.getMessage e)))))
+  (str (nth (parse-project-clj) 1)))
 
 (defn reset-program-model
   "Sets program model to be used."
@@ -46,10 +42,11 @@
   (reset! program-model nil))
 
 (defn model->program
-  "Make graph representation of a program specified through meta-model.
-  If program-model atom is present it is used regardless, otherwise:
-  If path to file which contains meta-model is not specified then <project-root>/larva-src/larva.clj
-  is used instead. If model key is supplied then it is used to produce program."
+  "Resolve program model in following order:
+  - program-model atom
+  - provided :model key
+  - provided :model-path key
+  - default-model-path"
   [& {:keys [path model] :or {path default-model-path}}]
   (if-let [model-atom @program-model] (g/->graph model-atom)
           (if model (g/->graph model) (-> path slurp edn/read-string g/->graph))))

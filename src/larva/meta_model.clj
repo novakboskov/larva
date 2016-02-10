@@ -53,7 +53,7 @@
   [Entity])
 
 (s/def DBTypes
-  (s/enum :postgres :mysql :h2))
+  (s/enum :postgres :mysql :h2 :sqlite :mongodb))
 
 (s/def Meta
   "Schema for meta section of program."

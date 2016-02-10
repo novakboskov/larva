@@ -64,6 +64,10 @@
               {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]
              (api/entity-properties "Band")))))))
 
+(deftest project-name-test
+  (testing "Project name referred by project.clj"
+    (is (= "larva" (api/project-name)))))
+
 (deftest program-meta-data-test
   (testing "Returned meta data from program."
     (eval-in-program-model-context
