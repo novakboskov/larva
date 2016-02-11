@@ -1,15 +1,21 @@
 (ns larva.db.utils
   "Provides common utilities which larva needs for producing database related things."
-  (:require [clojure.java.io :as io]
-            [clojure.string :as cs]
+  (:require [clojure
+             [pprint :as pp]
+             [string :as cs]]
+            [clojure.java.io :as io]
             [conman.core :as conman]
             [larva
              [messages :as msg]
              [program-api :as api]
              [utils :as utils]]
-            [yesql.core :refer [defqueries]]))
+            [larva.db.stuff :as stuff]
+            [yesql.core :refer [defqueries]]
+            [clojure.edn :as edn]))
 
 (def objects (atom {}))
+(def default-db-data-types-config
+  (io/file api/default-larva-dir "default_db_types_config.clj"))
 
 (defn infer-db-type
   "If :db key exists in :meta section of larva model it will be returned,
@@ -115,10 +121,21 @@
                    (str %1))) "" properties)
    ", " ""))
 
+(defn make-db-data-types-config
+  "Makes database types configuration file if it is not present.
+  It can receive map containing :model or :model-path as :spec key."
+  [& {:keys [spec db-type force]}]
+  (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
+    (if (or (not (.exists default-db-data-types-config)) force)
+      (utils/spit-data default-db-data-types-config
+                       (or (db-type stuff/database-types-config) {})))))
+
 (defmethod build-sequence-string :create-table
   [properties db-type _]
-  ;; TODO:
-  )
+  (make-db-data-types-config :db-type db-type)
+  (let [db-types (edn/read-string (slurp default-db-data-types-config))]
+    ;; TODO:
+    ))
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be

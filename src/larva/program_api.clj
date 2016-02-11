@@ -1,15 +1,18 @@
 (ns larva.program-api
   "API to inner program representation."
   (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [larva
              [graph :as g]
-             [program-api-schemes :refer :all]]
+             [program-api-schemes :refer :all]
+             [utils :refer [parse-project-clj]]]
             [schema.core :as s]
-            [ubergraph.core :as u]
-            [larva.utils :refer [parse-project-clj]]))
+            [ubergraph.core :as u]))
 
 (defonce ^:private program-model (atom nil))
-(def ^:private default-model-path "larva_src/larva.clj")
+(def default-larva-dir "larva_src")
+(def ^:private default-model-path
+  (.getPath (io/file default-larva-dir "larva.clj")))
 
 (defn- extract-property-name [property]
   (first (clojure.string/split property #"#")))

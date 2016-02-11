@@ -4,7 +4,21 @@
              [program-api :as api]
              [program-api-test :refer [eval-in-program-model-context]]
              [test-data :refer :all]]
-            [larva.db.utils :as utils]))
+            [larva.db
+             [stuff :as stuff]
+             [utils :as utils]]
+            [larva.utils :refer [slurp-as-data]]))
+
+(defmacro eval-in-environment [conf-for-type & forms]
+  `(let [stuff#      larva.db.stuff/database-types-config
+         default#    larva.db.utils/default-db-data-types-config
+         to-restore# (if (.exists default#) (larva.utils/slurp-as-data default#))]
+     (if ~conf-for-type
+       (larva.utils/spit-data default# (~conf-for-type stuff#))
+       (clojure.java.io/delete-file default# true))
+     ~@forms
+     (clojure.java.io/delete-file default#)
+     (if to-restore# (larva.utils/spit-data default# to-restore#))))
 
 (deftest infer-db-type-test
   (testing "DB type inference. It does not test scenario where db type is inferred from project.clj."
@@ -49,3 +63,27 @@
      entities-with-signature-plural
      (is (= "categories" (utils/build-plural-for-entity "Category" {})))
      (is (= "musicians" (utils/build-plural-for-entity "Musician" {}))))))
+
+(deftest make-db-data-types-config-test
+  (testing "Making database types configuration file on the right place.
+ Do not test scenario when function is called with no parameters."
+    (eval-in-environment
+     false
+     (utils/make-db-data-types-config :spec {:model standard-program-with-meta})
+     (is (= (:postgres stuff/database-types-config)
+            (slurp-as-data utils/default-db-data-types-config))))
+    (eval-in-environment
+     false
+     (utils/make-db-data-types-config :db-type :mysql)
+     (is (= (:mysql stuff/database-types-config)
+            (slurp-as-data utils/default-db-data-types-config))))
+    (eval-in-environment
+     :postgres
+     (utils/make-db-data-types-config :db-type :h2 :force true)
+     (is (= (:h2 stuff/database-types-config)
+            (slurp-as-data utils/default-db-data-types-config))))
+    (eval-in-environment
+     :postgres
+     (utils/make-db-data-types-config :db-type :h2)
+     (is (= (:postgres stuff/database-types-config)
+            (slurp-as-data utils/default-db-data-types-config))))))

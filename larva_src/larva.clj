@@ -3,7 +3,8 @@
   :author "Novak Boskov"
   :comment "This is just in the sake of a proof of concept."}
  :meta
- {:api-only false}
+ {:api-only false
+  :db :h2}
  :entities
  [{:signature "Musician"
    :properties [{:name "name" :type :str :gui-label "Name"}

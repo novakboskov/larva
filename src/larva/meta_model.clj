@@ -4,9 +4,9 @@
 
 (s/def SimpleDataType
   (s/enum :str :text
-          :num :float
+          :num :float :bignum
           :datetime :date :timestamp
-          :bool :geo :json :binary))
+          :bool :geo :json :binary :pass))
 
 (s/def Collection
   "Simple collection property."
