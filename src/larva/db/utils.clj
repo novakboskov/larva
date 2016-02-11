@@ -15,7 +15,7 @@
 
 (def objects (atom {}))
 (def default-db-data-types-config
-  (io/file api/default-larva-dir "default_db_types_config.clj"))
+  (io/file api/default-larva-dir "db_types_config.clj"))
 
 (defn infer-db-type
   "If :db key exists in :meta section of larva model it will be returned,
@@ -133,7 +133,7 @@
 (defmethod build-sequence-string :create-table
   [properties db-type _]
   (make-db-data-types-config :db-type db-type)
-  (let [db-types (edn/read-string (slurp default-db-data-types-config))]
+  (let [db-types (utils/slurp-as-data default-db-data-types-config)]
     ;; TODO:
     ))
 

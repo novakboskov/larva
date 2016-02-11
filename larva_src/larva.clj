@@ -9,7 +9,7 @@
  [{:signature "Musician"
    :properties [{:name "name" :type :str :gui-label "Name"}
                 {:name "surname" :type :str :gui-label "Surname"}
-                {:name "nickname" :type :str :gui-label "nick"}
+                {:name "nickname" :type "VARCHAR(20)" :gui-label "nick"}
                 {:name "honors" :type {:coll :str}}
                 {:name "band" :type {:one :ref-to
                                      :signature "Band"

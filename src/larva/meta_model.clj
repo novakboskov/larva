@@ -8,6 +8,8 @@
           :datetime :date :timestamp
           :bool :geo :json :binary :pass))
 
+(s/def CustomDataType s/Str)
+
 (s/def Collection
   "Simple collection property."
   {:coll SimpleDataType})
@@ -33,7 +35,8 @@
 (s/def PropertyDataType
   (s/conditional
    #(keyword? %) SimpleDataType
-   #(= 1 (count %)) Collection
+   #(string? %) CustomDataType
+   #(and (map? %) (= 1 (count %))) Collection
    :else SomethingWithReference))
 
 (s/def Property
@@ -58,7 +61,7 @@
 (s/def Meta
   "Schema for meta section of program."
   {(s/optional-key :api-only) s/Bool
-   (s/optional-key :db) DBTypes})
+   (s/optional-key :db)       DBTypes})
 
 (s/def About
   "Schema for about section of program."

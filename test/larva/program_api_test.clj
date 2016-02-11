@@ -62,7 +62,16 @@
               {:name "largeness" :type :str :gui-label "Largeness"}
               {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}
               {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]
-             (api/entity-properties "Band")))))))
+             (api/entity-properties "Band"))))
+     (eval-in-program-model-context
+      custom-property-datatype
+      (is (= [{:name "name" :type :str :gui-label "Name"}
+              {:name "location" :type "POINT" :gui-label "Loco"}
+              {:name      "bands" :type {:coll      :ref-to
+                                         :signature "Band"
+                                         :gui       :table-view}
+               :gui-label "participant bands"}]
+             (api/entity-properties "Festival")))))))
 
 (deftest project-name-test
   (testing "Project name referred by project.clj"
