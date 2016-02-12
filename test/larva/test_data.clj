@@ -328,7 +328,7 @@
      :plural     "Bands"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
-                  {:name "largeness" :type :str :gui-label "Largeness"}
+                  {:name "largeness" :type :num :gui-label "Largeness"}
                   {:name      "members" :type {:coll :ref-to :signature "Musician"}
                    :gui-label "Members"}
                   {:name      "category" :type {:one       :ref-to
@@ -363,4 +363,6 @@
                                              :gui       :select-form}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
-                  {:name "provider" :type :str :gui-label "provider"}]}]})
+                  {:name "provider" :type :str :gui-label "provider"}]}
+    {:signature "more info"
+     :properties [{:name "more info" :type :str}]}]})

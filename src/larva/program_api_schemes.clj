@@ -13,6 +13,8 @@
 
 (def APISimpleDataType mm/SimpleDataType)
 
+(def APICustomDataType mm/CustomDataType)
+
 (def APICollection mm/Collection)
 
 (def APICollectionWithReference mm/CollectionWithReference)

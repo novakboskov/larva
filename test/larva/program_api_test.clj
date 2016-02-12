@@ -35,7 +35,7 @@
            (-> {:model references-1} api/all-entities)))))
 
 (deftest entity-info-test
-  (testing "Testing structure and content of info map originated from entity."
+  (testing "Structure and content of info map originated from entity."
     (eval-in-program-model-context
      entities-with-signature-plural
      (is (= {:signature "Band" :plural "Bands"} (api/entity-info "Band")))
@@ -104,3 +104,16 @@
      (is (= {:name    "Pilot model" :author "Novak Boskov"
              :comment "This is just in the sake of a proof of concept."}
             (api/program-about))))))
+
+(deftest property-reference-test
+  (testing "Returned entities which are referenced from certain property."
+    (eval-in-program-model-context
+     custom-property-datatype
+     (let [property {:name      "band" :type {:one       :ref-to
+                                              :signature "Band"
+                                              :gui       :select-form}
+                     :gui-label "Of band"}]
+       (is (= {:one-to-many "Band"} (api/property-reference "Musician" property))))
+     (let [property {:name      "members" :type {:coll :ref-to :signature "Musician"}
+                     :gui-label "Members"}]
+       (is (= {:many-to-one "Musician"} (api/property-reference "Band" property)))))))

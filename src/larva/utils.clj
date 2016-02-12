@@ -1,6 +1,9 @@
 (ns larva.utils
-  (:require [clojure.edn :as edn]
-            [clojure.pprint :as pp]))
+  (:require [clojure
+             [edn :as edn]
+             [pprint :as pp]]
+            [clojure.java.io :as io]
+            [schema.core :as s]))
 
 (defn parse-project-clj
   []
@@ -21,4 +24,12 @@
   (edn/read-string (slurp file)))
 
 (defn spit-data [file content]
+  (io/make-parents file)
   (spit file (with-out-str (pp/pprint content))))
+
+(defn valid?
+  "Checks if data satisfies schema. If it satisfies returns data otherwise false."
+  [schema data]
+  (try
+    (s/validate schema data)
+    (catch Exception e false)))

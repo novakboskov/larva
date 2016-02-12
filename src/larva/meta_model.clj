@@ -12,7 +12,7 @@
 
 (s/def Collection
   "Simple collection property."
-  {:coll SimpleDataType})
+  {:coll (s/cond-pre SimpleDataType CustomDataType)})
 
 (s/def CollectionWithReference
   {:coll                 (s/enum :ref-to)

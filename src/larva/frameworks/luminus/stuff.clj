@@ -49,7 +49,16 @@
      :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.up.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-users-table.up.sql"]
+      "frameworks/luminus/larva-specific/db/migrations/add-entity-table.up.sql"]
+     :migtrations-alter-up
+     [(str "resources/migrations/" timestamp "-alter-{{entity-plural}}-table.up.sql")
+      "frameworks/luminus/larva-specific/db/migrations/alter-entity-table.up.sql"]
      :migrations-sql-down
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.down.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-users-table.down.sql"]}))
+      "frameworks/luminus/larva-specific/db/migrations/add-entity-table.down.sql"]
+     :additional-migrations-sql-up
+     [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.up.sql")
+      "frameworks/luminus/larva-specific/db/migrations/add-additional-entity-table.up.sql"]
+     :additional-migrations-sql-down
+     [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.down.sql")
+      "frameworks/luminus/larva-specific/db/migrations/add-additional-entity-table.down.sql"]}))

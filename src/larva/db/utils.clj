@@ -1,17 +1,15 @@
 (ns larva.db.utils
   "Provides common utilities which larva needs for producing database related things."
-  (:require [clojure
-             [pprint :as pp]
-             [string :as cs]]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as cs]
             [conman.core :as conman]
             [larva
              [messages :as msg]
              [program-api :as api]
+             [program-api-schemes :as sch]
              [utils :as utils]]
-            [larva.db.stuff :as stuff]
-            [yesql.core :refer [defqueries]]
-            [clojure.edn :as edn]))
+            [larva.db.stuff :as stuff :refer :all]
+            [yesql.core :refer [defqueries]]))
 
 (def objects (atom {}))
 (def default-db-data-types-config
@@ -69,7 +67,7 @@
   Returns vector of queries partitioned by directories they originated from."
   [{:keys [paths options connection]}]
   (loop [dir-paths paths queries []]
-    (if (-> dir-paths count (> 0))
+    (if (not-empty dir-paths)
       (let [dir  (first dir-paths)
             sqls (for [file (file-seq (-> dir io/resource io/file))
                        :let [name (.getName file)]
@@ -79,7 +77,7 @@
         (recur (rest dir-paths)
                (if (nil? connection)
                  (loop [files sqls q []]
-                   (if (-> files count (> 0))
+                   (if (not-empty files)
                      (recur (rest files)
                             (conj q (defqueries (first files) options)))
                      (conj queries (flatten q))))
@@ -128,14 +126,7 @@
   (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
     (if (or (not (.exists default-db-data-types-config)) force)
       (utils/spit-data default-db-data-types-config
-                       (or (db-type stuff/database-types-config) {})))))
-
-(defmethod build-sequence-string :create-table
-  [properties db-type _]
-  (make-db-data-types-config :db-type db-type)
-  (let [db-types (utils/slurp-as-data default-db-data-types-config)]
-    ;; TODO:
-    ))
+                       (or (db-type database-types-config) {})))))
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be
@@ -144,3 +135,43 @@
   (let [entity (api/entity-info entity-signature model-source)]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (str (drill-out-name-for-db entity-signature) "s"))))
+
+(defn- infer-property-data-type
+  "Returns a vector consisted of string to be placed as data type of table column
+  if that column is needed and indicator that shows if it represents a reference."
+  [prop-type-key db-types]
+  (cond (utils/valid? sch/APIReferenceToSingleEntity prop-type-key)
+        [(:num db-types) true]
+        (or (utils/valid? sch/APICollection prop-type-key)
+            (utils/valid? sch/APICollectionWithReference prop-type-key))
+        [false true]
+        (utils/valid? sch/APISimpleDataType prop-type-key)
+        [(get db-types prop-type-key) false]
+        (utils/valid? sch/APICustomDataType prop-type-key)
+        [prop-type-key false]))
+
+(defn build-db-create-table-string
+  "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
+  properties that are representing any kind of references."
+  [entity properties db-type force]
+  (make-db-data-types-config :db-type db-type :force force)
+  (let [db-types (utils/slurp-as-data default-db-data-types-config)]
+    (loop [props        properties
+           props-w-refs {entity []}
+           strings      [(str "id " (:id db-types) " "
+                              (:prim-key (db-type database-grammar)))]]
+      (if (not-empty props)
+        (let [p         (nth props 0) t (:type p)
+              [type rf] (infer-property-data-type t db-types)]
+          (recur
+           (rest props)
+           (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
+           (if type (conj strings (str (drill-out-name-for-db (:name p)) " " type))
+               strings)))
+        [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings)")")
+         props-w-refs]))))
+
+(defn build-alter-tables-strings
+  [entity-db-name ref-properties args]
+  ;; TODO:
+  )

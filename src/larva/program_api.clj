@@ -96,6 +96,42 @@
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (get-entity-properties (resolve-program model-options) entity)))
 
+(defn- get-property-reference [program entity property]
+  (let [reference (first
+                   (->> (g/build-property-label property entity)
+                        (u/out-edges program)
+                        (filter #(= (u/attr program % :type) g/reference-type))))
+        ref-dest  (u/dest reference)
+        back-ref  (get-in
+                   (->> (u/successors program ref-dest)
+                        (map
+                         (fn [successor]
+                           (into [] (filter
+                                     #(and (= g/reference-type (u/attr program % :type))
+                                           (= entity (u/dest %)))
+                                     (u/out-edges program successor)))))
+                        (remove empty?)
+                        (into []))
+                   [0 0])
+        src-crd   (u/attr program reference :cardinality)
+        dest-crd  (if back-ref (u/attr program back-ref :cardinality))]
+    (cond (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
+          {:many-to-many ref-dest}
+          (and back-ref (and (= src-crd :coll) (= dest-crd :one)))
+          {:many-to-one ref-dest}
+          (= src-crd :one) {:one-to-many ref-dest})))
+
+(s/defn ^:always-validate property-reference :- {(s/enum :one-to-many
+                                                         :many-to-one
+                                                         :one-to-one
+                                                         :many-to-many) s/Str}
+  "Returning the map consisted of reference type and signature of entity that is
+   referenced by certain property."
+  ([entity :- s/Str property :- APIProperty]
+   (get-property-reference (model->program) entity property))
+  ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]
+   (get-property-reference (resolve-program model-options) entity property)))
+
 (defn- get-program-meta
   [program]
   (if (contains? (u/nodes program) g/meta-node-label)

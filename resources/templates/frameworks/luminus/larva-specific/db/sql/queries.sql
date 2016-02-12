@@ -1,4 +1,4 @@
--- name: create-<<entity>>!
+-- name: create-<<entity>><!
 -- creates a new <<entity>> record
 INSERT INTO <<entity-plural>>
 <<properties>>

@@ -9,7 +9,8 @@
     :geo      "POINT"
     :json     "JSON"
     :binary   "BYTEA"
-    :pass     "VARCHAR(300)"}
+    :pass     "VARCHAR(300)"
+    :id       "serial"}
    :mysql
    {:str      "VARCHAR(30)" :text   "TEXT"
     :num      "INTEGER"     :bignum "BIGINT" :float     "FLOAT4" :bigfloat "DOUBLE"
@@ -18,7 +19,8 @@
     :geo      "POINT"
     :json     "JSON"
     :binary   "BINARY"
-    :pass     "VARCHAR(300)"}
+    :pass     "VARCHAR(300)"
+    :id       "AUTO_INCREMENT"}
    :h2
    {:str      "VARCHAR(30)" :text   "TEXT"
     :num      "INTEGER"     :bignum "BIGINT" :float     "FLOAT" :bigfloat "DOUBLE"
@@ -27,7 +29,20 @@
     :geo      "VARCHAR(30)"
     :json     "VARCHAR(300)"
     :binary   "BINARY"
-    :pass     "VARCHAR(300)"}
+    :pass     "VARCHAR(300)"
+    :id       "IDENTITY"}
+   :sqlite
+   {}
+   :mongodb
+   {}})
+
+(def database-grammar
+  {:postgres
+   {:not-null "NOT NULL" :prim-key "PRIMARY KEY"}
+   :mysql
+   {:not-null "NOT NULL" :prim-key "PRIMARY KEY"}
+   :h2
+   {:not-null "NOT NULL" :prim-key "PRIMARY KEY"}
    :sqlite
    {}
    :mongodb

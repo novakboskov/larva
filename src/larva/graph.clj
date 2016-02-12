@@ -17,6 +17,8 @@
 
 (def entities-node :entities)
 
+(def reference-type :reference)
+
 (defn build-entity-node-label [entity]
   (:signature entity))
 
@@ -84,7 +86,8 @@
           (= :ref-to (get-in property [:type :one])))
     {:graph      (g/add-edges graph [(build-property-label property parent)
                                      (get-in property [:type :signature])
-                                     {:label (build-reference-edge-label
+                                     {:type reference-type
+                                      :label (build-reference-edge-label
                                               (:type property) next-order)
                                       :cardinality
                                       (cond
@@ -101,7 +104,7 @@
    properties :- Properties
    next-order :- s/Int]
   (loop [g graph props properties po next-order]
-    (if (> (count props) 0)
+    (if (not-empty props)
       (let [prop-label (build-property-label (first props) parent)
             g-w-property
             (-> (g/add-nodes-with-attrs g [prop-label
@@ -196,7 +199,7 @@ entity-order for next entity."
         entity-order     (:next-order graph)]
     ;; adding entities to graph
     (loop [g graph ents entities eo entity-order]
-      (if (> (count ents) 0)
+      (if (not-empty ents)
         (let [entity (add-whole-entity (:graph g) (first ents) eo)]
           (recur entity (rest ents) (:next-order entity)))
         (:graph g)))))

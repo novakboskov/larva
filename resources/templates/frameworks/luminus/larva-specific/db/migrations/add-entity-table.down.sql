@@ -1,1 +1,1 @@
-DROP TABLE <<entity>>;
+DROP TABLE <<entity-plural>>;
