@@ -46,6 +46,9 @@
      :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
      :queries        ["resources/sql/{{entity-plural}}_queries.sql"
                       "frameworks/luminus/larva-specific/db/sql/queries.sql"]
+     :additional-queries
+     ["resources/sql/{{mtm-table-name}}_queries.sql"
+      "frameworks/luminus/larva-specific/db/sql/add-queries.sql"]
      :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.up.sql")

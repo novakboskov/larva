@@ -14,3 +14,5 @@ pom.xml.asc
 # files generated from larva itself when playing around
 /resources/sql/
 /larva_src/default_db_types_config.clj
+/resources/migrations/
+/larva_src/db_types_config.clj

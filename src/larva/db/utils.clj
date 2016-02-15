@@ -172,6 +172,6 @@
          props-w-refs]))))
 
 (defn build-alter-tables-strings
-  [entity-db-name ref-properties args]
+  [ref-properties]
   ;; TODO:
   )
