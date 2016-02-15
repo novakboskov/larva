@@ -5,6 +5,7 @@
              [test-data :refer :all]]))
 
 (defmacro eval-in-program-model-context [program & forms]
+  "Evaluates s-expressions in context of certain program morel."
   `(do (larva.program-api/reset-program-model ~program)
        ~@forms
        (larva.program-api/destroy-program-model)))
@@ -109,6 +110,35 @@
   (testing "Returned entities which are referenced from certain property."
     (eval-in-program-model-context
      custom-property-datatype
+     (let [property {:name "instruments" :type {:coll      :ref-to
+                                                :signature "Instrument"
+                                                :gui       :table-view}}]
+       (is (= {:many-to-many "Instrument"} (api/property-reference "Musician" property))))
+     (let [property {:name "musicians" :type {:coll      :ref-to
+                                              :signature "Musician"
+                                              :gui       :table-view}}]
+       (is (= {:many-to-many "Musician"} (api/property-reference "Instrument" property))))
+     (let [property {:name      "subcategories" :type {:coll      :ref-to
+                                                       :signature "Category"
+                                                       :gui       :table-view}
+                     :gui-label "subcategories"}]
+       (is (= {:many-to-many "Category" :recursive true}
+              (api/property-reference "Category" property))))
+     (let [property {:name "influenced" :type {:coll      :ref-to
+                                               :signature "Band"
+                                               :gui       :table-view}}]
+       (is (= {:many-to-many "Band" :recursive true}
+              (api/property-reference "Band" property))))
+     (let [property {:name "mentor" :type {:one       :ref-to
+                                           :signature "Mentor"
+                                           :gui       :select-form}}]
+       (is (= {:one-to-one "Mentor"}
+              (api/property-reference "Musician" property))))
+     (let [property {:name "guru" :type {:one       :ref-to
+                                         :signature "Musician"
+                                         :gui       :select-form}}]
+       (is (= {:one-to-one "Musician" :recursive true}
+              (api/property-reference "Musician" property))))
      (let [property {:name      "band" :type {:one       :ref-to
                                               :signature "Band"
                                               :gui       :select-form}

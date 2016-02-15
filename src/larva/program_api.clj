@@ -114,19 +114,19 @@
                         (into []))
                    [0 0])
         src-crd   (u/attr program reference :cardinality)
-        dest-crd  (if back-ref (u/attr program back-ref :cardinality))]
+        dest-crd  (if back-ref (u/attr program back-ref :cardinality))
+        recursive (if (= reference back-ref) {:recursive true})]
     (cond (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
-          {:many-to-many ref-dest}
+          (merge {:many-to-many ref-dest} recursive)
+          (and back-ref (and (= src-crd :one) (= dest-crd :one)))
+          (merge {:one-to-one ref-dest} recursive)
           (and back-ref (and (= src-crd :coll) (= dest-crd :one)))
-          {:many-to-one ref-dest}
-          (= src-crd :one) {:one-to-many ref-dest})))
+          (merge {:many-to-one ref-dest} recursive)
+          (= src-crd :one) (merge {:one-to-many ref-dest} recursive))))
 
-(s/defn ^:always-validate property-reference :- {(s/enum :one-to-many
-                                                         :many-to-one
-                                                         :one-to-one
-                                                         :many-to-many) s/Str}
+(s/defn ^:always-validate property-reference :- APIPropertyReference
   "Returning the map consisted of reference type and signature of entity that is
-   referenced by certain property."
+   referenced by certain property alongside with and recursion indicator."
   ([entity :- s/Str property :- APIProperty]
    (get-property-reference (model->program) entity property))
   ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]

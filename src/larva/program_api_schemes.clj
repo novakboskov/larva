@@ -34,3 +34,10 @@
 (def APIAbout mm/About)
 
 (def APIProgram mm/Program)
+
+(def APIPropertyReference
+  {(s/enum :one-to-many
+           :many-to-one
+           :one-to-one
+           :many-to-many) s/Str
+   (s/optional-key :recursive) s/Bool})

@@ -323,7 +323,16 @@
                    :gui-label "Of band"}
                   {:name      "social-profile" :type {:one       :ref-to
                                                       :signature "SocialMediaProfile"}
-                   :gui-label "profile"}]}
+                   :gui-label "profile"}
+                  {:name "instruments" :type {:coll :ref-to
+                                              :signature "Instrument"
+                                              :gui :table-view}}
+                  {:name "guru" :type {:one :ref-to
+                                       :signature "Musician"
+                                       :gui :select-form}}
+                  {:name "mentor" :type {:one :ref-to
+                                         :signature "Mentor"
+                                         :gui :select-form}}]}
     {:signature  "Band"
      :plural     "Bands"
      :properties [{:name "name" :type :str :gui-label "Name"}
@@ -338,7 +347,10 @@
                   {:name      "participated" :type {:coll      :ref-to
                                                     :signature "Festival"
                                                     :gui       :table-view}
-                   :gui-label "Participated in"}]}
+                   :gui-label "Participated in"}
+                  {:name "influenced" :type {:coll :ref-to
+                                             :signature "Band"
+                                             :gui :table-view}}]}
     {:signature  "Category"
      :plural     "Categories"
      :properties [{:name "name" :type :str :gui-label "Name"}
@@ -364,5 +376,18 @@
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}
+    {:signature "Mentor"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "surname" :type :str :gui-label "Surname"}
+                  {:name "learner" :type {:one       :ref-to
+                                          :signature "Musician"
+                                          :gui       :select-form}}]
+     :plural "Mentors"}
     {:signature "more info"
-     :properties [{:name "more info" :type :str}]}]})
+     :properties [{:name "more info" :type :str}]}
+    {:signature "Instrument"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "musicians" :type {:coll :ref-to
+                                            :signature "Musician"
+                                            :gui :table-view}}
+                  {:name "type" :type :str :gui-label "Instrument type"}]}]})
