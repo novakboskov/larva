@@ -12,15 +12,20 @@
         :else      nil))
 
 (defn- add-additional
-  [references templates options]
-  (let [db-options
+  [references templates db-type options]
+  (let [render-options (:render-options templates) force (:force options)
+        args (build-api-args-map options)
+        db-options
         {:alter-tables (db/build-alter-tables-strings references)}]
     ;; TODO:
+    (doseq [k (db/build-add-db-create-table-keys references db-type args)]
+      (render-assets [:additional-migrations-sql-up templates]
+                     (merge k render-options)))
     (render-assets [(:additional-migrations-sql-up templates)
                     (:migtrations-alter-up templates)
                     (:additional-queries templates)
                     (:additional-migrations-sql-down templates)]
-                   (merge db-options (:render-options options)))))
+                   (merge db-options render-options))))
 
 (defn add-database-layer
   [options]
@@ -49,7 +54,7 @@
                           (:migrations-sql-down templates)]
                          (merge db-options (:render-options options)))
           (recur (rest ents) (conj references refs)))
-        (add-additional references templates options)))))
+        (add-additional references templates db-type force options)))))
 
 ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
 ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace

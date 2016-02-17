@@ -121,12 +121,14 @@
 
 (defn make-db-data-types-config
   "Makes database types configuration file if it is not present.
-  It can receive map containing :model or :model-path as :spec key."
+  It can receive map containing :model or :model-path as :spec key.
+  Returns that configuration."
   [& {:keys [spec db-type force]}]
   (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
     (if (or (not (.exists default-db-data-types-config)) force)
       (utils/spit-data default-db-data-types-config
-                       (or (db-type database-types-config) {})))))
+                       (or (db-type database-types-config) {})))
+    (utils/slurp-as-data default-db-data-types-config)))
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be
@@ -136,7 +138,7 @@
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (str (drill-out-name-for-db entity-signature) "s"))))
 
-(defn- infer-property-data-type
+(defn infer-property-data-type
   "Returns a vector consisted of string to be placed as data type of table column
   if that column is needed and indicator that shows if it represents a reference."
   [prop-type-key db-types]
@@ -149,29 +151,3 @@
         [(get db-types prop-type-key) false]
         (utils/valid? sch/APICustomDataType prop-type-key)
         [prop-type-key false]))
-
-(defn build-db-create-table-string
-  "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
-  properties that are representing any kind of references."
-  [entity properties db-type force]
-  (make-db-data-types-config :db-type db-type :force force)
-  (let [db-types (utils/slurp-as-data default-db-data-types-config)]
-    (loop [props        properties
-           props-w-refs {entity []}
-           strings      [(str "id " (:id db-types) " "
-                              (:prim-key (db-type database-grammar)))]]
-      (if (not-empty props)
-        (let [p         (nth props 0) t (:type p)
-              [type rf] (infer-property-data-type t db-types)]
-          (recur
-           (rest props)
-           (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
-           (if type (conj strings (str (drill-out-name-for-db (:name p)) " " type))
-               strings)))
-        [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings)")")
-         props-w-refs]))))
-
-(defn build-alter-tables-strings
-  [ref-properties]
-  ;; TODO:
-  )

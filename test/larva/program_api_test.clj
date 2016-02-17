@@ -113,37 +113,43 @@
      (let [property {:name "instruments" :type {:coll      :ref-to
                                                 :signature "Instrument"
                                                 :gui       :table-view}}]
-       (is (= {:many-to-many "Instrument"} (api/property-reference "Musician" property))))
+       (is (= {:many-to-many "Instrument" :back-property "musicians"}
+              (api/property-reference "Musician" property))))
      (let [property {:name "musicians" :type {:coll      :ref-to
                                               :signature "Musician"
                                               :gui       :table-view}}]
-       (is (= {:many-to-many "Musician"} (api/property-reference "Instrument" property))))
+       (is (= {:many-to-many "Musician" :back-property "instruments"}
+              (api/property-reference "Instrument" property))))
      (let [property {:name      "subcategories" :type {:coll      :ref-to
                                                        :signature "Category"
                                                        :gui       :table-view}
                      :gui-label "subcategories"}]
-       (is (= {:many-to-many "Category" :recursive true}
+       (is (= {:many-to-many "Category" :back-property "subcategories" :recursive true}
               (api/property-reference "Category" property))))
      (let [property {:name "influenced" :type {:coll      :ref-to
                                                :signature "Band"
                                                :gui       :table-view}}]
-       (is (= {:many-to-many "Band" :recursive true}
+       (is (= {:many-to-many "Band" :back-property "influenced" :recursive true}
               (api/property-reference "Band" property))))
      (let [property {:name "mentor" :type {:one       :ref-to
                                            :signature "Mentor"
                                            :gui       :select-form}}]
-       (is (= {:one-to-one "Mentor"}
+       (is (= {:one-to-one "Mentor" :back-property "learner"}
               (api/property-reference "Musician" property))))
      (let [property {:name "guru" :type {:one       :ref-to
                                          :signature "Musician"
                                          :gui       :select-form}}]
-       (is (= {:one-to-one "Musician" :recursive true}
+       (is (= {:one-to-one "Musician" :back-property "guru" :recursive true}
               (api/property-reference "Musician" property))))
      (let [property {:name      "band" :type {:one       :ref-to
                                               :signature "Band"
                                               :gui       :select-form}
                      :gui-label "Of band"}]
-       (is (= {:one-to-many "Band"} (api/property-reference "Musician" property))))
+       (is (= {:one-to-many "Band" :back-property "members"}
+              (api/property-reference "Musician" property))))
      (let [property {:name      "members" :type {:coll :ref-to :signature "Musician"}
                      :gui-label "Members"}]
-       (is (= {:many-to-one "Musician"} (api/property-reference "Band" property)))))))
+       (is (= {:many-to-one "Musician" :back-property "band"}
+              (api/property-reference "Band" property))))
+     (let [property {:name "name" :type :str :gui-label "Name"}]
+       (is (= {} (api/property-reference "Musician" property)))))))

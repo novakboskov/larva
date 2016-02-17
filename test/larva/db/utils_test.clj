@@ -78,84 +78,18 @@
  Do not test scenario when function is called with no parameters."
     (eval-in-environment
      false
-     (utils/make-db-data-types-config :spec {:model standard-program-with-meta})
      (is (= (:postgres stuff/database-types-config)
-            (slurp-as-data utils/default-db-data-types-config))))
+            (utils/make-db-data-types-config
+             :spec {:model standard-program-with-meta}))))
     (eval-in-environment
      false
-     (utils/make-db-data-types-config :db-type :mysql)
      (is (= (:mysql stuff/database-types-config)
-            (slurp-as-data utils/default-db-data-types-config))))
+            (utils/make-db-data-types-config :db-type :mysql))))
     (eval-in-environment
      :postgres
-     (utils/make-db-data-types-config :db-type :h2 :force true)
      (is (= (:h2 stuff/database-types-config)
-            (slurp-as-data utils/default-db-data-types-config))))
+            (utils/make-db-data-types-config :db-type :h2 :force true))))
     (eval-in-environment
      :postgres
-     (utils/make-db-data-types-config :db-type :h2)
      (is (= (:postgres stuff/database-types-config)
-            (slurp-as-data utils/default-db-data-types-config))))))
-
-(deftest build-db-create-table-string-test
-  (testing "Create table string and properties with references returning."
-    (eval-in-program-model-context
-     custom-property-datatype
-     (eval-in-environment
-      :postgres
-      (let [entity         (nth (api/all-entities) 0)
-            entity-db-name (utils/drill-out-name-for-db entity)
-            ps             (api/entity-properties entity)
-            string         (platform-agnostic "(id serial PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n social_profile INTEGER,\n guru INTEGER,\n mentor INTEGER)")]
-        (is (= [string
-                {entity-db-name
-                 [{:name "honors" :type {:coll :str}}
-                  {:name      "band"
-                   :type      {:one :ref-to :signature "Band" :gui :select-form}
-                   :gui-label "Of band"}
-                  {:name      "social-profile"
-                   :type      {:one :ref-to :signature "SocialMediaProfile"}
-                   :gui-label "profile"}
-                  {:name "instruments" :type {:coll      :ref-to
-                                              :signature "Instrument"
-                                              :gui       :table-view}}
-                  {:name "guru" ,
-                   :type {:one :ref-to, :signature "Musician" , :gui :select-form}}
-                  {:name "mentor" ,
-                   :type {:one :ref-to, :signature "Mentor" , :gui :select-form}}]}]
-               (utils/build-db-create-table-string entity-db-name ps :postgres true))))))
-    (eval-in-program-model-context
-     custom-property-datatype
-     (eval-in-environment
-      :postgres
-      (let [entity         (nth (api/all-entities) 1)
-            entity-db-name (utils/drill-out-name-for-db entity)
-            ps             (api/entity-properties entity)
-            string         (platform-agnostic
-                            "(id AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER)")]
-        (is (= [string
-                {entity-db-name
-                 [{:name      "members" :type {:coll :ref-to :signature "Musician"}
-                   :gui-label "Members"}
-                  {:name      "category" :type {:one       :ref-to
-                                                :signature "Category"
-                                                :gui       :drop-list}
-                   :gui-label "Category"}
-                  {:name      "participated" :type {:coll      :ref-to
-                                                    :signature "Festival"
-                                                    :gui       :table-view}
-                   :gui-label "Participated in"}
-                  {:name "influenced" ,
-                   :type {:coll :ref-to, :signature "Band" , :gui :table-view}}]}]
-               (utils/build-db-create-table-string entity-db-name ps :mysql true))))))
-    (eval-in-program-model-context
-     custom-property-datatype
-     (eval-in-environment
-      :postgres
-      (let [entity         (last (drop-last 1 (api/all-entities)))
-            entity-db-name (utils/drill-out-name-for-db entity)
-            ps             (api/entity-properties entity)
-            string         (platform-agnostic
-                            "(id AUTO_INCREMENT PRIMARY KEY,\n more_info VARCHAR(30))")]
-        (is (= [string {entity-db-name []}]
-               (utils/build-db-create-table-string entity-db-name ps :mysql true))))))))
+            (utils/make-db-data-types-config :db-type :h2))))))

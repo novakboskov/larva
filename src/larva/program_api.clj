@@ -14,9 +14,6 @@
 (def ^:private default-model-path
   (.getPath (io/file default-larva-dir "larva.clj")))
 
-(defn- extract-property-name [property]
-  (first (clojure.string/split property #"#")))
-
 (defmulti ^:private sort-by-edge
   (fn [first second & third] (if third :properties :entities)))
 
@@ -101,28 +98,30 @@
                    (->> (g/build-property-label property entity)
                         (u/out-edges program)
                         (filter #(= (u/attr program % :type) g/reference-type))))
-        ref-dest  (u/dest reference)
-        back-ref  (get-in
-                   (->> (u/successors program ref-dest)
-                        (map
-                         (fn [successor]
-                           (into [] (filter
-                                     #(and (= g/reference-type (u/attr program % :type))
-                                           (= entity (u/dest %)))
-                                     (u/out-edges program successor)))))
-                        (remove empty?)
-                        (into []))
-                   [0 0])
-        src-crd   (u/attr program reference :cardinality)
+        ref-dest  (and reference (u/dest reference))
+        [[back-ref] back-prop]
+        (and ref-dest
+             (nth (->> (u/successors program ref-dest)
+                       (map
+                        (fn [successor]
+                          [(filter
+                            #(and (= g/reference-type (u/attr program % :type))
+                                  (= entity (u/dest %)))
+                            (u/out-edges program successor))
+                           (u/attr program successor :name)]))
+                       (remove #(empty? (first %)))) 0))
+        src-crd   (and reference (u/attr program reference :cardinality))
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
+        back-prop (if back-prop {:back-property back-prop})
         recursive (if (= reference back-ref) {:recursive true})]
-    (cond (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
-          (merge {:many-to-many ref-dest} recursive)
+    (cond (not reference)  {}
+          (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
+          (merge {:many-to-many ref-dest} back-prop recursive)
           (and back-ref (and (= src-crd :one) (= dest-crd :one)))
-          (merge {:one-to-one ref-dest} recursive)
+          (merge {:one-to-one ref-dest} back-prop recursive)
           (and back-ref (and (= src-crd :coll) (= dest-crd :one)))
-          (merge {:many-to-one ref-dest} recursive)
-          (= src-crd :one) (merge {:one-to-many ref-dest} recursive))))
+          (merge {:many-to-one ref-dest} back-prop recursive)
+          (= src-crd :one) (merge {:one-to-many ref-dest} back-prop recursive))))
 
 (s/defn ^:always-validate property-reference :- APIPropertyReference
   "Returning the map consisted of reference type and signature of entity that is
