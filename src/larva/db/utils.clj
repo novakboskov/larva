@@ -138,6 +138,18 @@
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (str (drill-out-name-for-db entity-signature) "s"))))
 
+(defn build-db-table-name
+  "Builds DB table name from plural if model-source is present or from bare name
+  if it's not."
+  [entity-signature & [model-source singular]]
+  (let [drilled-name (drill-out-name-for-db entity-signature)
+        to-capt      (if-not singular
+                       (build-plural-for-entity entity-signature model-source)
+                       drilled-name)]
+    (if model-source
+      (cs/capitalize to-capt)
+      (cs/capitalize drilled-name))))
+
 (defn infer-property-data-type
   "Returns a vector consisted of string to be placed as data type of table column
   if that column is needed and indicator that shows if it represents a reference."

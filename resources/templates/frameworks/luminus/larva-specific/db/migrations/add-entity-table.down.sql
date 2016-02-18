@@ -1,1 +1,1 @@
-DROP TABLE <<entity-plural>>;
+DROP TABLE <<entity-plural>> CASCADE;

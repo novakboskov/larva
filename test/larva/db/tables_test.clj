@@ -70,12 +70,11 @@
 
 (deftest build-add-db-create-table-keys-test
   (testing "Returned keys intended to fulfill create table template."
-    ;; (eval-in-program-model-context
-    ;;  custom-property-datatype
-    ;;  (let [ents      (api/all-entities)
-    ;;        db-t      :postgres
-    ;;        ent-props (map #(second
-    ;;                         (tbl/build-db-create-table-string %1 %2 db-t false))
-    ;;                       ents (map #(api/entity-properties %) ents))]
-    ;;    (is (= ent-props (tbl/build-add-db-create-table-keys ent-props db-t nil)))))
-    ))
+    (eval-in-program-model-context
+     custom-property-datatype
+     (let [ents      (api/all-entities)
+           db-t      :postgres
+           ent-props (map #(second
+                            (tbl/build-db-create-table-string %1 %2 db-t false))
+                          ents (map #(api/entity-properties %) ents))]
+       (is (= ent-props (tbl/build-add-db-create-table-keys ent-props db-t nil)))))))
