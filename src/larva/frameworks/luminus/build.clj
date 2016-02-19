@@ -1,9 +1,11 @@
 (ns larva.frameworks.luminus.build
   (:require [larva.code-gen.common :refer [render-assets]]
-            [larva.db.utils :as db]
+            [larva.db
+             [tables :as tbl]
+             [utils :as db]]
+            [larva.frameworks.luminus.stuff :as stuff]
             [larva.program-api :as api]
-            [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]
-            [larva.frameworks.luminus.stuff :as stuff]))
+            [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]))
 
 (defn- build-api-args-map
   [{:keys [model-path model]}]
@@ -16,9 +18,9 @@
   (let [render-options (:render-options templates) force (:force options)
         args (build-api-args-map options)
         db-options
-        {:alter-tables (db/build-alter-tables-strings references)}]
+        {:alter-tables (tbl/build-alter-tables-strings references)}]
     ;; TODO:
-    (doseq [k (db/build-add-db-create-table-keys references db-type args)]
+    (doseq [k (tbl/build-additional-templates-keys references db-type args)]
       (render-assets [:additional-migrations-sql-up templates]
                      (merge k render-options)))
     (render-assets [(:additional-migrations-sql-up templates)
@@ -41,7 +43,7 @@
                               (api/entity-properties entity))
               ent-db-name (db/drill-out-name-for-db entity)
               [props-create-table refs]
-              (db/build-db-create-table-string entity props db-type force)
+              (tbl/build-db-create-table-string entity props db-type force)
               db-options
               {:entity             ent-db-name
                :entity-plural      (db/build-plural-for-entity entity args)

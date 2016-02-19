@@ -29,6 +29,9 @@
   {:create-tbl [CreateTableMap] :drop  [DropMap]
    :query      [QueryMap]       :alter [AlterMap]})
 
+(defn- make-id-column-name [entity]
+  (str (drill-out-name-for-db entity) "_id"))
+
 (defn- get-cardinality-keyword [cardinality]
   (cond (nil? cardinality)                    :simple-collection
         (contains? cardinality :many-to-many) :many-to-many
@@ -57,45 +60,22 @@
         [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings)")")
          props-w-refs]))))
 
-(defn- build-additional-db-create-tbl-string
+(defn- build-additional-tbl-create-tbl-string
   [cardinality entity args db-type]
-  (let [db-types (make-db-data-types-config {:spec args :db-type db-type})
-        crd      (get-cardinality-keyword cardinality)]
-    (case crd
-      :many-to-many
-      [(str "id " (:id db-types) " " (:prim-key (db-type database-grammar)) ","
-            (System/lineSeparator)
-            ;; TODO:
-            )])))
+  (let [crd      (get-cardinality-keyword cardinality)
+        db-types (make-db-data-types-config {:spec args :db-type db-type})
+        uniq     (case crd :many-to-many false :one-to-one true)]
+    ((->> database-grammar db-type :referential-table-columns) db-types
+     [(make-id-column-name entity) (build-db-table-name entity args) "id"
+      uniq]
+     [(make-id-column-name (:many-to-many cardinality))
+      (build-db-table-name (:many-to-many cardinality) args) "id" uniq])))
 
-(s/defn make-create-tbl-keys-dispatch :- KeysMap
-  [cardinality _ _ _ _ _]
-  (get-cardinality-keyword cardinality))
-
-(defmulti ^:private make-create-tbl-keys
-  (fn [cardinality _ _ _ _ _] (get-cardinality-keyword cardinality)))
-
-(defmethod make-create-tbl-keys :many-to-many
+(defn- make-create-tbl-keys
   [cardinality entity property args db-type keys-map]
   {:ad-entity-plural (build-db-table-name entity args)
    :ad-props-create-table
-   (build-additional-db-create-tbl-string cardinality entity args db-type)})
-
-(defmethod make-create-tbl-keys :one-to-one
-  [cardinality entity property args db-type keys-map]
-  )
-
-(defmethod make-create-tbl-keys :many-to-one
-  [cardinality entity property args db-type keys-map]
-  )
-
-(defmethod make-create-tbl-keys :one-to-many
-  [cardinality entity property args db-type keys-map]
-  )
-
-(defmethod make-create-tbl-keys :simple-collection
-  [cardinality entity property args db-type keys-map]
-  )
+   (build-additional-tbl-create-tbl-string cardinality entity args db-type)})
 
 (defmulti build-tbl-name
   (fn [inferred-card _ _ _] (get-cardinality-keyword inferred-card)))
@@ -160,7 +140,7 @@
            ;; (apply make-queries-keys)
            ))))
 
-(s/defn ^:always-validate build-add-db-create-table-keys
+(s/defn ^:always-validate build-additional-templates-keys
   [ent-refs :- [{s/Str APIProperties}] db-type args]
   (loop [er ent-refs made [] template-keys {}]
     (if (not-empty er)

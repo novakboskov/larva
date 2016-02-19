@@ -124,11 +124,11 @@
   It can receive map containing :model or :model-path as :spec key.
   Returns that configuration."
   [& {:keys [spec db-type force]}]
-  (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
-    (if (or (not (.exists default-db-data-types-config)) force)
+  (if (or (not (.exists default-db-data-types-config)) force)
+    (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
       (utils/spit-data default-db-data-types-config
-                       (or (db-type database-types-config) {})))
-    (utils/slurp-as-data default-db-data-types-config)))
+                       (or (db-type database-types-config) {}))))
+  (utils/slurp-as-data default-db-data-types-config))
 
 (defn build-plural-for-entity
   "If program specifies entity plural it will be return, otherwise it will be
