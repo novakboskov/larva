@@ -39,9 +39,8 @@
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
 (defn relational-db-files []
-  (let [timestamp (.format
-                   (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
-                   (java.util.Date.))]
+  (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
+                           (java.util.Date.))]
     {:core           ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
      :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
      :queries        ["resources/sql/{{entity-plural}}_queries.sql"

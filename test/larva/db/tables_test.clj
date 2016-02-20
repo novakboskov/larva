@@ -68,7 +68,7 @@
         (is (= [string {entity []}]
                (tbl/build-db-create-table-string entity ps :mysql true))))))))
 
-(deftest build-add-db-create-table-keys-test
+(deftest build-additional-templates-keys-test
   (testing "Returned keys intended to fulfill create table template."
     (eval-in-program-model-context
      custom-property-datatype
@@ -77,4 +77,4 @@
            ent-props (map #(second
                             (tbl/build-db-create-table-string %1 %2 db-t false))
                           ents (map #(api/entity-properties %) ents))]
-       (is (= ent-props (tbl/build-add-db-create-table-keys ent-props db-t nil)))))))
+       (is (= ent-props (tbl/build-additional-templates-keys ent-props db-t nil)))))))

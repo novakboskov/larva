@@ -63,7 +63,7 @@
 (defn- build-additional-tbl-create-tbl-string
   [cardinality entity args db-type]
   (let [crd      (get-cardinality-keyword cardinality)
-        db-types (make-db-data-types-config {:spec args :db-type db-type})
+        db-types (make-db-data-types-config :spec args :db-type db-type)
         uniq     (case crd :many-to-many false :one-to-one true)]
     ((->> database-grammar db-type :referential-table-columns) db-types
      [(make-id-column-name entity) (build-db-table-name entity args) "id"
@@ -71,43 +71,28 @@
      [(make-id-column-name (:many-to-many cardinality))
       (build-db-table-name (:many-to-many cardinality) args) "id" uniq])))
 
-(defn- make-create-tbl-keys
+(s/defn ^:private make-create-tbl-keys :- CreateTableMap
   [cardinality entity property args db-type keys-map]
-  {:ad-entity-plural (build-db-table-name entity args)
-   :ad-props-create-table
-   (build-additional-tbl-create-tbl-string cardinality entity args db-type)})
+  (let [crd (get-cardinality-keyword cardinality)]
+    (if (or (= crd :many-to-many) (= crd :one-to-one))
+      {:ad-entity-plural (build-db-table-name entity args)
+       :ad-props-create-table
+       (build-additional-tbl-create-tbl-string cardinality entity args db-type)}
+      keys-map)))
 
-(defmulti build-tbl-name
-  (fn [inferred-card _ _ _] (get-cardinality-keyword inferred-card)))
-
-(defmethod build-tbl-name :many-to-many
+(defn- build-tbl-name
+  "Building name of an additional table which is relation by-product."
   [inferred-card entity property args]
-  (str (build-db-table-name entity args)
-       "_" (build-db-table-name (:many-to-many inferred-card) args)
-       "_mtm"))
-
-(defmethod build-tbl-name :one-to-one
-  [inferred-card entity property args]
-  (str (build-db-table-name entity args true)
-       "_" (build-db-table-name (:one-to-one inferred-card) args true)
-       "_oto"))
-
-(defmethod build-tbl-name :one-to-many
-  [inferred-card entity property args]
-  (str (build-db-table-name entity args true)
-       "_" (build-db-table-name (:one-to-many infer-db-type) args)
-       "_otm"))
-
-(defmethod build-tbl-name :many-to-one
-  [inferred-card entity property args]
-  (str (build-db-table-name entity args)
-       "_" (build-db-table-name (:one-to-many infer-db-type) args true)
-       "_mto"))
-
-(defmethod build-tbl-name :simple-collection
-  [inferred-card entity property args]
-  (str (build-db-table-name entity args)
-       "_" (drill-out-name-for-db (:name property)) "_scl"))
+  (let [crd (get-cardinality-keyword inferred-card)]
+    (case crd
+      :many-to-many
+      (str (build-db-table-name entity args)
+           "_" (build-db-table-name (:many-to-many inferred-card) args)
+           "_mtm")
+      :one-to-one
+      (str (build-db-table-name entity args true)
+           "_" (build-db-table-name (:one-to-one inferred-card) args true)
+           "_oto"))))
 
 (defn- form-already-made-item [inferred-cardinality entity property]
   (let [crd (get-cardinality-keyword inferred-cardinality)]
@@ -115,20 +100,25 @@
           :dest [(crd inferred-cardinality) (:back-perty inferred-cardinality)]}]))
 
 (defn- get-corresponding-made-item [made-item made]
-  (let [reverse-crd #(let [crd (first %)]
-                       (case crd
-                         :one-to-many :many-to-one
-                         :many-to-one :one-to-many
-                         :else        crd))]
-    (some #(= (made-item [(reverse-crd %) {:src  (:dest (second %))
-                                           :dest (:src (second %))}])) made)))
+  (if-not (= :simple-collection (first made-item))
+    (let [reverse-crd #(let [crd (first %)]
+                         (case crd
+                           :one-to-many :many-to-one
+                           :many-to-one :one-to-many
+                           crd))]
+      (some #(= (made-item [(reverse-crd %) {:src  (:dest (second %))
+                                             :dest (:src (second %))}]))
+            (filter #(not (= :simple-collection (first %))) made)))))
 
-(defn- make-drop-tbl-keys
-  [inferred-card entity property keys-map args]
-  (let [cardinality-key (get-cardinality-keyword inferred-card)
-        make-drops-item #(merge-with concat keys-map
-                                     {:drops [{:ad-entity-plural %}]})]
-    (make-drops-item (build-tbl-name inferred-card entity property args))))
+(s/defn ^:private make-drop-tbl-keys :- DropMap
+  [inferred-card entity property args _ keys-map]
+  (let [crd (get-cardinality-keyword inferred-card)]
+    (if (or (= crd :many-to-many) (= crd :one-to-one))
+      (merge-with
+       concat keys-map
+       {:drops [{:ad-entity-plural
+                 (build-tbl-name inferred-card entity property args)}]})
+      keys-map)))
 
 (defn- make-keys [inferred-card entity property made-item made args db-type]
   (if (not (get-corresponding-made-item made-item made))
@@ -141,6 +131,8 @@
            ))))
 
 (s/defn ^:always-validate build-additional-templates-keys
+  "Building keys aimed to fulfill templates that create up and down migrations
+   for relation-consequential tables, corresponding alters and queries."
   [ent-refs :- [{s/Str APIProperties}] db-type args]
   (loop [er ent-refs made [] template-keys {}]
     (if (not-empty er)
@@ -152,12 +144,9 @@
                       inferred-card
                       (or
                        (not-empty (if args (api/property-reference entity p args)
-                                      (api/property-reference entity p)))
-                       {:simple-collection entity})
-                      made-item (form-already-made-item
-                                 inferred-card entity p)]
-                  (recur (rest props)
-                         (if inferred-card (conj made made-item) made)
+                                      (api/property-reference entity p))))
+                      made-item (form-already-made-item inferred-card entity p)]
+                  (recur (rest props) (conj made made-item)
                          (merge-with
                           concat
                           t-keys (make-keys inferred-card entity
@@ -166,8 +155,3 @@
         (recur (rest er) (conj made made-untll-now)
                (merge-with concat template-keys t-keys)))
       template-keys)))
-
-(defn build-alter-tables-strings
-  [ref-properties]
-  ;; TODO:
-  )

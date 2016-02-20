@@ -16,7 +16,7 @@
 (defn- add-additional
   [references templates db-type options]
   (let [render-options (:render-options templates) force (:force options)
-        args (build-api-args-map options)
+        args           (build-api-args-map options)
         db-options
         {:alter-tables (tbl/build-alter-tables-strings references)}]
     ;; TODO:

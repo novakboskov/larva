@@ -38,10 +38,10 @@
    {}})
 
 (defn- mysql-referential-table-columns
-  [db-types first second]
+  [prim-key db-types first second]
   (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
                      (nth % 1) "(" (nth % 2)  ")")]
-    (str "id " (:id db-types) " " (:prim-key (db-types database-grammar)) ","
+    (str "id " (:id db-types) " " (prim-key) ","
          (System/lineSeparator)
          (column first) "," (System/lineSeparator) (column second)
          (let [uniqs (for [c [first second] :when (nth c 3)] (nth c 0))]
@@ -50,24 +50,30 @@
                "")))))
 
 (defn- psql-referential-table-columns
-  [db-types first second]
+  [prim-key db-types first second]
   (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
                      (nth % 1) "(" (nth % 2)  ")"
                      (if (nth 3 %) " UNIQUE" ""))]
-    (str "id " (:id db-types) " " (:prim-key (db-types database-grammar)) ","
+    (str "id " (:id db-types) " " (prim-key) ","
          (System/lineSeparator)
          (column first) "," (System/lineSeparator) (column second))))
 
 (def database-grammar
   {:postgres
-   {:not-null                  "NOT NULL" :prim-key "PRIMARY KEY"
-    :referential-table-columns psql-referential-table-columns}
+   (let [prim-key "PRIMARY KEY"]
+     {:not-null "NOT NULL" :prim-key prim-key
+      :referential-table-columns
+      (partial psql-referential-table-columns prim-key)})
    :mysql
-   {:not-null                  "NOT NULL" :prim-key "PRIMARY KEY"
-    :referential-table-columns mysql-referential-table-columns}
+   (let [prim-key "PRIMARY KEY"]
+     {:not-null "NOT NULL" :prim-key prim-key
+      :referential-table-columns
+      (partial mysql-referential-table-columns prim-key)})
    :h2
-   {:not-null   "NOT NULL" :prim-key "PRIMARY KEY"
-    :references #(str "REFERENCES " %1 "(" %2 ")")}
+   (let [prim-key "PRIMARY KEY"]
+     {:not-null "NOT NULL" :prim-key prim-key
+      :references
+      (partial mysql-referential-table-columns prim-key)})
    :sqlite
    {}
    :mongodb
