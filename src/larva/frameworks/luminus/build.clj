@@ -17,17 +17,19 @@
   [references templates db-type options]
   (let [render-options (:render-options templates) force (:force options)
         args           (build-api-args-map options)
-        db-options
-        {:alter-tables (tbl/build-alter-tables-strings references)}]
+        ;; db-options
+        ;; {:alter-tables (tbl/build-alter-tables-strings references)}
+        ]
     ;; TODO:
     (doseq [k (tbl/build-additional-templates-keys references db-type args)]
       (render-assets [:additional-migrations-sql-up templates]
                      (merge k render-options)))
-    (render-assets [(:additional-migrations-sql-up templates)
-                    (:migtrations-alter-up templates)
-                    (:additional-queries templates)
-                    (:additional-migrations-sql-down templates)]
-                   (merge db-options render-options))))
+    ;; (render-assets [(:additional-migrations-sql-up templates)
+    ;;                 (:migtrations-alter-up templates)
+    ;;                 (:additional-queries templates)
+    ;;                 (:additional-migrations-sql-down templates)]
+    ;;                (merge db-options render-options))
+    ))
 
 (defn add-database-layer
   [options]
@@ -43,7 +45,7 @@
                               (api/entity-properties entity))
               ent-db-name (db/drill-out-name-for-db entity)
               [props-create-table refs]
-              (tbl/build-db-create-table-string entity props db-type force)
+              (tbl/build-db-create-table-string entity props db-type force args)
               db-options
               {:entity             ent-db-name
                :entity-plural      (db/build-plural-for-entity entity args)

@@ -4,7 +4,8 @@
   (:require [clojure.string :as cs]
             [larva
              [program-api :as api]
-             [program-api-schemes :refer [APIProperties]]]
+             [program-api-schemes :as sch :refer [APIProperties]]
+             [utils :as utils]]
             [larva.db
              [stuff :refer [database-grammar]]
              [utils :refer :all]]
@@ -39,11 +40,27 @@
         (contains? cardinality :many-to-one)  :many-to-one
         (contains? cardinality :one-to-many)  :one-to-many))
 
+(defn- infer-property-data-type
+  "Returns a vector consisted of string to be placed as data type of table column
+  if that column is needed and indicator that shows if it represents a reference."
+  [prop-type-key cardinality db-types]
+  (let [crd (get-cardinality-keyword cardinality)]
+    (cond (utils/valid? sch/APIReferenceToSingleEntity prop-type-key)
+          [(:num db-types) true]
+          (utils/valid? sch/APICollectionWithReference prop-type-key)
+          (if (= crd :many-to-one) [false true] [(:num db-types) true])
+          (utils/valid? sch/APICollection prop-type-key)
+          [false true]
+          (utils/valid? sch/APISimpleDataType prop-type-key)
+          [(get db-types prop-type-key) false]
+          (utils/valid? sch/APICustomDataType prop-type-key)
+          [prop-type-key false])))
+
 (s/defn ^:always-validate build-db-create-table-string :- DBStringRefs
   "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
   properties that are representing any kind of references mapped to
   corresponding entity."
-  [entity :- s/Str properties db-type force]
+  [entity :- s/Str properties db-type force args]
   (let [db-types (make-db-data-types-config :db-type db-type :force force)]
     (loop [props        properties
            props-w-refs {entity []}
@@ -51,7 +68,9 @@
                               (:prim-key (db-type database-grammar)))]]
       (if (not-empty props)
         (let [p         (nth props 0) t (:type p)
-              [type rf] (infer-property-data-type t db-types)]
+              crd       (if args (api/property-reference entity p args)
+                            (api/property-reference entity p))
+              [type rf] (infer-property-data-type t crd db-types)]
           (recur
            (rest props)
            (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
@@ -119,6 +138,7 @@
        {:drops [{:ad-entity-plural
                  (build-tbl-name inferred-card entity property args)}]})
       keys-map)))
+
 
 (defn- make-keys [inferred-card entity property made-item made args db-type]
   (if (not (get-corresponding-made-item made-item made))

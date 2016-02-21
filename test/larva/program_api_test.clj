@@ -54,23 +54,29 @@
      (is (= [{:name "name" :type :str :gui-label "Name"}
              {:name "surename" :type :str :gui-label "Surname"}
              {:name "nickname" :type :str :gui-label "nick"}
-             {:name "honors" :type {:coll :str}}]
+             {:name "honors" :type {:coll :str}}
+             {:name "band" :type {:one :reference
+                                  :to  ["Band" "members"]}}]
             (api/entity-properties "Musician")))
      (eval-in-program-model-context
       standard-program-cardinality-1
       (is (= [{:name "name" :type :str :gui-label "Name"}
               {:name "genre" :type :str :gui-label "Genre"}
               {:name "largeness" :type :str :gui-label "Largeness"}
-              {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}
-              {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]
+              {:name      "members" :type {:coll :reference
+                                           :to   ["Musician"]}
+               :gui-label "Members"}
+              {:name      "category" :type {:one :reference
+                                            :to  ["Category" "bands"]}
+               :gui-label "Category"}]
              (api/entity-properties "Band"))))
      (eval-in-program-model-context
       custom-property-datatype
       (is (= [{:name "name" :type :str :gui-label "Name"}
               {:name "location" :type "POINT" :gui-label "Loco"}
-              {:name      "bands" :type {:coll      :ref-to
-                                         :signature "Band"
-                                         :gui       :table-view}
+              {:name      "participants" :type {:coll :reference
+                                                :to   ["Band" "participated"]
+                                                :gui  :table-view}
                :gui-label "participant bands"}]
              (api/entity-properties "Festival")))))))
 
@@ -110,44 +116,46 @@
   (testing "Returned entities which are referenced from certain property."
     (eval-in-program-model-context
      custom-property-datatype
-     (let [property {:name "instruments" :type {:coll      :ref-to
-                                                :signature "Instrument"
-                                                :gui       :table-view}}]
-       (is (= {:many-to-many "Instrument" :back-property "musicians"}
+     (let [property {:name "instruments" :type {:coll :reference
+                                                :to   ["Instrument" "players"]
+                                                :gui  :table-view}}]
+       (is (= {:many-to-many "Instrument" :back-property "players"}
               (api/property-reference "Musician" property))))
-     (let [property {:name "musicians" :type {:coll      :ref-to
-                                              :signature "Musician"
-                                              :gui       :table-view}}]
+     (let [property {:name "players" :type {:coll :reference
+                                            :to   ["Musician"]
+                                            :gui  :table-view}}]
        (is (= {:many-to-many "Musician" :back-property "instruments"}
               (api/property-reference "Instrument" property))))
-     (let [property {:name      "subcategories" :type {:coll      :ref-to
-                                                       :signature "Category"
-                                                       :gui       :table-view}
+     (let [property {:name      "subcategories" :type
+                     {:coll :reference
+                      :to   ["Category" "subcategories"]
+                      :gui  :table-view}
                      :gui-label "subcategories"}]
        (is (= {:many-to-many "Category" :back-property "subcategories" :recursive true}
               (api/property-reference "Category" property))))
-     (let [property {:name "influenced" :type {:coll      :ref-to
-                                               :signature "Band"
-                                               :gui       :table-view}}]
+     (let [property {:name "influenced" :type {:coll :reference
+                                               :to   ["Band" "influenced"]
+                                               :gui  :table-view}}]
        (is (= {:many-to-many "Band" :back-property "influenced" :recursive true}
               (api/property-reference "Band" property))))
-     (let [property {:name "mentor" :type {:one       :ref-to
-                                           :signature "Mentor"
-                                           :gui       :select-form}}]
+     (let [property {:name "mentor" :type {:one :reference
+                                           :to  ["Mentor" "learner"]
+                                           :gui :select-form}}]
        (is (= {:one-to-one "Mentor" :back-property "learner"}
               (api/property-reference "Musician" property))))
-     (let [property {:name "guru" :type {:one       :ref-to
-                                         :signature "Musician"
-                                         :gui       :select-form}}]
+     (let [property {:name "guru" :type {:one :reference
+                                         :to  ["Musician" "guru"]
+                                         :gui :select-form}}]
        (is (= {:one-to-one "Musician" :back-property "guru" :recursive true}
               (api/property-reference "Musician" property))))
-     (let [property {:name      "band" :type {:one       :ref-to
-                                              :signature "Band"
-                                              :gui       :select-form}
+     (let [property {:name      "band" :type {:one :reference
+                                              :to  ["Band" "members"]
+                                              :gui :select-form}
                      :gui-label "Of band"}]
        (is (= {:one-to-many "Band" :back-property "members"}
               (api/property-reference "Musician" property))))
-     (let [property {:name      "members" :type {:coll :ref-to :signature "Musician"}
+     (let [property {:name      "members" :type {:coll :reference
+                                                 :to   ["Musician"]}
                      :gui-label "Members"}]
        (is (= {:many-to-one "Musician" :back-property "band"}
               (api/property-reference "Band" property))))

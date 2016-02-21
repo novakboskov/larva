@@ -93,24 +93,42 @@
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (get-entity-properties (resolve-program model-options) entity)))
 
+(defn- get-back-ref&back-prop
+  [program entity property reference ref-dest explicit-back-property]
+  (and ref-dest
+       (cond
+         explicit-back-property
+         (let [prop-label
+               (g/build-property-label-from-str explicit-back-property ref-dest)]
+           [(filter #(= entity (u/dest %)) (u/out-edges program prop-label))
+            explicit-back-property])
+         (not explicit-back-property)
+         (nth (->> (u/successors program ref-dest)
+                   (map
+                    (fn [successor]
+                      [(filter
+                        #(and (= g/reference-type (u/attr program % :type))
+                              (= entity (u/dest %))
+                              (= (g/build-property-label property entity)
+                                 (g/build-property-label-from-str
+                                  (u/attr program % :back-property) entity)))
+                        (u/out-edges program successor))
+                       (u/attr program successor :name)]))
+                   (remove #(empty? (first %)))) 0))))
+
 (defn- get-property-reference [program entity property]
   (let [reference (first
                    (->> (g/build-property-label property entity)
                         (u/out-edges program)
                         (filter #(= (u/attr program % :type) g/reference-type))))
-        ref-dest  (and reference (u/dest reference))
+        ref-dest  (if reference (u/dest reference))
+        explicit-back-property
+        (if ref-dest (u/attr program reference :back-property))
         [[back-ref] back-prop]
-        (and ref-dest
-             (nth (->> (u/successors program ref-dest)
-                       (map
-                        (fn [successor]
-                          [(filter
-                            #(and (= g/reference-type (u/attr program % :type))
-                                  (= entity (u/dest %)))
-                            (u/out-edges program successor))
-                           (u/attr program successor :name)]))
-                       (remove #(empty? (first %)))) 0))
-        src-crd   (and reference (u/attr program reference :cardinality))
+        (if ref-dest (get-back-ref&back-prop
+                       program entity property reference ref-dest
+                       explicit-back-property))
+        src-crd   (if reference (u/attr program reference :cardinality))
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
         back-prop (if back-prop {:back-property back-prop})
         recursive (if (= reference back-ref) {:recursive true})]

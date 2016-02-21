@@ -29,6 +29,10 @@
   [prop :- Property parent :- s/Str]
   (str (:name prop) "#" parent))
 
+(s/defn ^:always-validate build-property-label-from-str :- s/Str
+  [prop-name :- s/Str parent :- s/Str]
+  (str prop-name "#" parent))
+
 (defn build-property-edge-label [next-order]
   (str "property: " next-order))
 
@@ -63,17 +67,17 @@
 
 (s/defn ^{:always-validate true :private true} build-about-map
   [about :- About]
-  (let [name (if-let [name (:name about)] {:name name} {})
-        author (if-let [author (:author about)] {:author author} {})
+  (let [name    (if-let [name (:name about)] {:name name} {})
+        author  (if-let [author (:author about)] {:author author} {})
         comment (if-let [comment (:comment about)] {:comment comment} {})
-        uuid {:uuid (node-uuid)}]
+        uuid    {:uuid (node-uuid)}]
     (merge name author comment uuid)))
 
 (s/defn ^{:always-validate true :private true} build-meta-data-map
   [meta-data :- Meta]
   (let [api-only (if-let [ao (-> (:api-only meta-data) nil? not)] {:api-only ao} {})
-        db (if-let [db (:db meta-data)] {:db db} {})
-        uuid {:uuid (node-uuid)}]
+        db       (if-let [db (:db meta-data)] {:db db} {})
+        uuid     {:uuid (node-uuid)}]
     (merge api-only db uuid)))
 
 (s/defn ^{:always-validate true :private true}
@@ -82,11 +86,13 @@
   "Add property->entity references."
   [graph :- ubergraph.core.Ubergraph property :- Property
    parent :- s/Str next-order :- s/Int]
-  (if (or (= :ref-to (get-in property [:type :coll]))
-          (= :ref-to (get-in property [:type :one])))
+  (if (or (= :reference (get-in property [:type :coll]))
+          (= :reference (get-in property [:type :one])))
     {:graph      (g/add-edges graph [(build-property-label property parent)
-                                     (get-in property [:type :signature])
-                                     {:type reference-type
+                                     (get-in property [:type :to 0])
+                                     {:type  reference-type
+                                      :back-property
+                                      (get-in property [:type :to 1])
                                       :label (build-reference-edge-label
                                               (:type property) next-order)
                                       :cardinality

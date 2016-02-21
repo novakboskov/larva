@@ -23,12 +23,16 @@
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
-                  {:name "honors" :type {:coll :str}}]}
+                  {:name "honors" :type {:coll :str}}
+                  {:name "band" :type {:one :reference
+                                       :to  ["Band"]}}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}]}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician" "band"]}
+                   :gui-label "Members"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}]}]})
@@ -79,17 +83,25 @@
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surename" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
-                  {:name "honors" :type {:coll :str}}]}
+                  {:name "honors" :type {:coll :str}}
+                  {:name "band" :type {:one :reference
+                                       :to  ["Band" "members"]}}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}]}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician"]}
+                   :gui-label "Members"}
+                  {:name "fans" :type {:coll :reference
+                                       :to   ["Fan" "bands"]}}]}
     {:signature  "Fan"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "gender" :type :str :gui-label "Gender"}
-                  {:name "bands" :type {:coll :ref-to :signature "Band"} :gui-label "Beloved bands"}]}
+                  {:name      "bands" :type {:coll :reference
+                                             :to   ["Band"]}
+                   :gui-label "Beloved bands"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}]}]})
@@ -100,12 +112,16 @@
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surename" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
-                  {:name "honors" :type {:coll :str}}]}
+                  {:name "honors" :type {:coll :str}}
+                  {:name "band" :type {:one :reference
+                                       :to  ["Band" "members"]}}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}]}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician"]}
+                   :gui-label "Members"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}]}]})
@@ -118,17 +134,27 @@
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
-                  {:name "honors" :type {:coll :str}}]}
+                  {:name "honors" :type {:coll :str}}
+                  {:name "band" :type {:one :reference
+                                       :to  ["Band" "members"]}}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name "members" :type {:coll :ref-to :signature "Musician"} :gui-label "Members"}
-                  {:name "category" :type {:one :ref-to :signature "Category"} :gui-label "Category"}]}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician"]}
+                   :gui-label "Members"}
+                  {:name      "category" :type {:one :reference
+                                                :to  ["Category" "bands"]}
+                   :gui-label "Category"}]}
     {:signature  "Category"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name      "subcategories" :type {:coll :ref-to :signature "Category"}
-                   :gui-label "subcategories"}]}
+                  {:name      "subcategories" :type
+                   {:coll :reference
+                    :to   ["Category" "subcategories"]}
+                   :gui-label "subcategories"}
+                  {:name "bands" :type {:coll :reference
+                                        :to   ["Band"]}}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}]}]})
@@ -145,34 +171,43 @@
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
                   {:name "honors" :type {:coll :str}}
-                  {:name      "band" :type {:one :ref-to :signature "Band"}
+                  {:name      "band" :type {:one :reference
+                                            :to  ["Band"]}
                    :gui-label "Of band"}
-                  {:name      "social-profile" :type {:one :ref-to :signature
-                                                      "SocialMediaProfile"}
+                  {:name      "social-profile" :type
+                   {:one :reference
+                    :to  ["SocialMediaProfile"]}
                    :gui-label "profile"}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name      "members" :type {:coll :ref-to :signature "Musician"}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician" "band"]}
                    :gui-label "Members"}
-                  {:name      "category" :type {:one :ref-to :signature "Category"}
+                  {:name      "category" :type {:one :reference
+                                                :to  ["Category" "bands"]}
                    :gui-label "Category"}
-                  {:name      "participated" :type {:coll :ref-to :signature "Festival"}
+                  {:name      "participated" :type
+                   {:coll :reference
+                    :to   ["Festival" "participants"]}
                    :gui-label "Participated in"}]}
     {:signature  "Category"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name      "subcategories" :type {:coll :ref-to :signature "Category"}
+                  {:name      "subcategories" :type
+                   {:coll :reference :to ["Category" "subcategories"]}
                    :gui-label "subcategories"}
-                  {:name      "bands" :type {:coll :ref-to :signature "Band"}
+                  {:name      "bands" :type {:coll :reference :to ["Band"]}
                    :gui-label "Bands of category"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}
-                  {:name      "bands" :type {:coll :ref-to :signature "Band"}
+                  {:name      "participants" :type {:coll :reference
+                                                    :to   ["Band"]}
                    :gui-label "participant bands"}]}
     {:signature  "SocialMediaProfile"
-     :properties [{:name      "owner" :type {:one :ref-to :signature "Musician"}
+     :properties [{:name      "owner" :type {:one :reference
+                                             :to  ["Musician" "social-profile"]}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]})
@@ -191,48 +226,49 @@
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
                   {:name "honors" :type {:coll :str}}
-                  {:name      "band" :type {:one       :ref-to
-                                            :signature "Band"
-                                            :gui       :select-form}
+                  {:name      "band" :type {:one :reference
+                                            :to  ["Band"]
+                                            :gui :select-form}
                    :gui-label "Of band"}
-                  {:name      "social-profile" :type {:one       :ref-to
-                                                      :signature "SocialMediaProfile"}
+                  {:name      "social-profile" :type
+                   {:one :reference
+                    :to  ["SocialMediaProfile"]}
                    :gui-label "profile"}]}
     {:signature  "Band"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name      "members" :type {:coll :ref-to :signature "Musician"}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician" "band"]}
                    :gui-label "Members"}
-                  {:name      "category" :type {:one       :ref-to
-                                                :signature "Category"
-                                                :gui       :drop-list}
+                  {:name      "category" :type {:one :reference
+                                                :to  ["Category" "bands"]
+                                                :gui :select-form}
                    :gui-label "Category"}
-                  {:name      "participated" :type {:coll      :ref-to
-                                                    :signature "Festival"
-                                                    :gui       :table-view}
+                  {:name      "participated" :type
+                   {:coll :reference
+                    :to   ["Festival" "participants"]}
                    :gui-label "Participated in"}]}
     {:signature  "Category"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name      "subcategories" :type {:coll      :ref-to
-                                                     :signature "Category"
-                                                     :gui       :table-view}
+                  {:name      "subcategories" :type
+                   {:coll :reference :to ["Category" "subcategories"]
+                    :gui  :table-view}
                    :gui-label "subcategories"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "bands" :type {:coll :reference :to ["Band"]
+                                             :gui  :table-view}
                    :gui-label "Bands of category"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "participants" :type {:coll :reference
+                                                    :to   ["Band"]
+                                                    :gui  :table-view}
                    :gui-label "participant bands"}]}
     {:signature  "SocialMediaProfile"
-     :properties [{:name      "owner" :type {:one       :ref-to
-                                             :signature "Musician"
-                                             :gui       :select-form}
+     :properties [{:name      "owner" :type {:one :reference
+                                             :to  ["Musician" "social-profile" ]
+                                             :gui :select-form}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]})
@@ -250,50 +286,51 @@
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type :str :gui-label "nick"}
                   {:name "honors" :type {:coll :str}}
-                  {:name      "band" :type {:one       :ref-to
-                                            :signature "Band"
-                                            :gui       :select-form}
+                  {:name      "band" :type {:one :reference
+                                            :to  ["Band"]
+                                            :gui :select-form}
                    :gui-label "Of band"}
-                  {:name      "social-profile" :type {:one       :ref-to
-                                                      :signature "SocialMediaProfile"}
+                  {:name      "social-profile" :type
+                   {:one :reference
+                    :to  ["SocialMediaProfile"]}
                    :gui-label "profile"}]}
     {:signature  "Band"
      :plural     "Bands"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :str :gui-label "Largeness"}
-                  {:name      "members" :type {:coll :ref-to :signature "Musician"}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician" "band"]}
                    :gui-label "Members"}
-                  {:name      "category" :type {:one       :ref-to
-                                                :signature "Category"
-                                                :gui       :drop-list}
+                  {:name      "category" :type {:one :reference
+                                                :to  ["Category" "bands"]
+                                                :gui :select-form}
                    :gui-label "Category"}
-                  {:name      "participated" :type {:coll      :ref-to
-                                                    :signature "Festival"
-                                                    :gui       :table-view}
+                  {:name      "participated" :type
+                   {:coll :reference
+                    :to   ["Festival" "participants"]}
                    :gui-label "Participated in"}]}
     {:signature  "Category"
      :plural     "Categories"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name      "subcategories" :type {:coll      :ref-to
-                                                     :signature "Category"
-                                                     :gui       :table-view}
+                  {:name      "subcategories" :type
+                   {:coll :reference :to ["Category" "subcategories"]
+                    :gui  :table-view}
                    :gui-label "subcategories"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "bands" :type {:coll :reference :to ["Band"]
+                                             :gui  :table-view}
                    :gui-label "Bands of category"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type :geo :gui-label "Loco"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "participants" :type {:coll :reference
+                                                    :to   ["Band"]
+                                                    :gui  :table-view}
                    :gui-label "participant bands"}]}
     {:signature  "SocialMediaProfile"
-     :properties [{:name      "owner" :type {:one       :ref-to
-                                             :signature "Musician"
-                                             :gui       :select-form}
+     :properties [{:name      "owner" :type {:one :reference
+                                             :to  ["Musician" "social-profile"]
+                                             :gui :select-form}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}]})
@@ -317,77 +354,100 @@
                   {:name "surname" :type :str :gui-label "Surname"}
                   {:name "nickname" :type "VARCHAR(20)" :gui-label "nick"}
                   {:name "honors" :type {:coll :str}}
-                  {:name      "band" :type {:one       :ref-to
-                                            :signature "Band"
-                                            :gui       :select-form}
+                  {:name      "band" :type {:one :reference
+                                            :to  ["Band" "members"]
+                                            :gui :select-form}
                    :gui-label "Of band"}
-                  {:name      "social-profile" :type {:one       :ref-to
-                                                      :signature "SocialMediaProfile"}
+                  {:name      "dream band" :type {:one :reference
+                                                  :to  ["Band" "dream about"]
+                                                  :gui :select-form}
+                   :gui-label "Dream about"}
+                  {:name      "social-profile" :type
+                   {:one :reference
+                    :to  ["SocialMediaProfile" "owner"]}
                    :gui-label "profile"}
-                  {:name "instruments" :type {:coll :ref-to
-                                              :signature "Instrument"
-                                              :gui :table-view}}
-                  {:name "guru" :type {:one :ref-to
-                                       :signature "Musician"
+                  {:name "instruments" :type {:coll :reference
+                                              :to   ["Instrument" "players"]
+                                              :gui  :table-view}}
+                  {:name "knows how to repair" :type
+                   {:coll :reference
+                    :to   ["Instrument" "repairers"]
+                    :gui  :table-view}}
+                  {:name "guru" :type {:one :reference
+                                       :to  ["Musician" "guru"]
                                        :gui :select-form}}
-                  {:name "mentor" :type {:one :ref-to
-                                         :signature "Mentor"
+                  {:name "disrespected by" :type {:one :reference
+                                                  :to  ["Mentor" "disrespect"]
+                                                  :gui :select-form}}
+                  {:name "mentor" :type {:one :reference
+                                         :to  ["Mentor" "learner"]
                                          :gui :select-form}}]}
     {:signature  "Band"
      :plural     "Bands"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "genre" :type :str :gui-label "Genre"}
                   {:name "largeness" :type :num :gui-label "Largeness"}
-                  {:name      "members" :type {:coll :ref-to :signature "Musician"}
+                  {:name      "members" :type {:coll :reference
+                                               :to   ["Musician"]}
                    :gui-label "Members"}
-                  {:name      "category" :type {:one       :ref-to
-                                                :signature "Category"
-                                                :gui       :drop-list}
+                  {:name      "dream about" :type {:coll :reference
+                                                   :to   ["Musician"]}
+                   :gui-label "Members"}
+                  {:name      "category" :type {:one :reference
+                                                :to  ["Category" "bands"]
+                                                :gui :drop-list}
                    :gui-label "Category"}
-                  {:name      "participated" :type {:coll      :ref-to
-                                                    :signature "Festival"
-                                                    :gui       :table-view}
+                  {:name      "participated" :type {:coll :reference
+                                                    :to   ["Festival"]
+                                                    :gui  :table-view}
                    :gui-label "Participated in"}
-                  {:name "influenced" :type {:coll :ref-to
-                                             :signature "Band"
-                                             :gui :table-view}}]}
+                  {:name "influenced" :type {:coll :reference
+                                             :to   ["Band" "influenced"]
+                                             :gui  :table-view}}]}
     {:signature  "Category"
      :plural     "Categories"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name      "subcategories" :type {:coll      :ref-to
-                                                     :signature "Category"
-                                                     :gui       :table-view}
+                  {:name      "subcategories" :type
+                   {:coll :reference
+                    :to   ["Category" "subcategories"]
+                    :gui  :table-view}
                    :gui-label "subcategories"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "bands" :type {:coll :reference
+                                             :to   ["Band"]
+                                             :gui  :table-view}
                    :gui-label "Bands of category"}]}
     {:signature  "Festival"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "location" :type "POINT" :gui-label "Loco"}
-                  {:name      "bands" :type {:coll      :ref-to
-                                             :signature "Band"
-                                             :gui       :table-view}
+                  {:name      "participants" :type {:coll :reference
+                                                    :to   ["Band" "participated"]
+                                                    :gui  :table-view}
                    :gui-label "participant bands"}]}
     {:signature  "SocialMediaProfile"
-     :properties [{:name      "owner" :type {:one       :ref-to
-                                             :signature "Musician"
-                                             :gui       :select-form}
+     :properties [{:name      "owner" :type {:one :reference
+                                             :to  ["Musician"]
+                                             :gui :select-form}
                    :gui-label "Name"}
                   {:name "name" :type :str :gui-label "name"}
                   {:name "provider" :type :str :gui-label "provider"}]}
-    {:signature "Mentor"
+    {:signature  "Mentor"
      :properties [{:name "name" :type :str :gui-label "Name"}
                   {:name "surname" :type :str :gui-label "Surname"}
-                  {:name "learner" :type {:one       :ref-to
-                                          :signature "Musician"
-                                          :gui       :select-form}}]
-     :plural "Mentors"}
-    {:signature "more info"
+                  {:name "learner" :type {:one :reference
+                                          :to  ["Musician"]
+                                          :gui :select-form}}
+                  {:name "disrespect" :type {:one :reference
+                                             :to  ["Musician"]
+                                             :gui :select-form}}]
+     :plural     "Mentors"}
+    {:signature  "more info"
      :properties [{:name "more info" :type :str}]}
-    {:signature "Instrument"
+    {:signature  "Instrument"
      :properties [{:name "name" :type :str :gui-label "Name"}
-                  {:name "musicians" :type {:coll :ref-to
-                                            :signature "Musician"
-                                            :gui :table-view}}
+                  {:name "players" :type {:coll :reference
+                                          :to   ["Musician"]
+                                          :gui  :table-view}}
+                  {:name "repairers" :type {:coll :reference
+                                            :to   ["Musician"]
+                                            :gui  :table-view}}
                   {:name "type" :type :str :gui-label "Instrument type"}]}]})

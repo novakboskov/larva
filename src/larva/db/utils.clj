@@ -149,17 +149,3 @@
     (if model-source
       (cs/capitalize to-capt)
       (cs/capitalize drilled-name))))
-
-(defn infer-property-data-type
-  "Returns a vector consisted of string to be placed as data type of table column
-  if that column is needed and indicator that shows if it represents a reference."
-  [prop-type-key db-types]
-  (cond (utils/valid? sch/APIReferenceToSingleEntity prop-type-key)
-        [(:num db-types) true]
-        (or (utils/valid? sch/APICollection prop-type-key)
-            (utils/valid? sch/APICollectionWithReference prop-type-key))
-        [false true]
-        (utils/valid? sch/APISimpleDataType prop-type-key)
-        [(get db-types prop-type-key) false]
-        (utils/valid? sch/APICustomDataType prop-type-key)
-        [prop-type-key false]))

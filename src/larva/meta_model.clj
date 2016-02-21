@@ -14,15 +14,20 @@
   "Simple collection property."
   {:coll (s/cond-pre SimpleDataType CustomDataType)})
 
+(s/def SignatureProperty
+  (s/conditional
+   #(or (= (count %) 2) (= (count %) 1))
+   [(s/one s/Str "signature") (s/optional s/Str "property")]))
+
 (s/def CollectionWithReference
-  {:coll                 (s/enum :ref-to)
-   :signature            s/Str
+  {:coll                 (s/enum :reference)
+   :to                   SignatureProperty
    ;; optional GUI representation of referenced collection
    (s/optional-key :gui) (s/enum :table-view)})
 
 (s/def ReferenceToSingleEntity
-  {:one                  (s/enum :ref-to)
-   :signature            s/Str
+  {:one                  (s/enum :reference)
+   :to                   SignatureProperty
    ;; optional GUI representation of referenced think
    (s/optional-key :gui) (s/enum :select-form :drop-list)})
 
