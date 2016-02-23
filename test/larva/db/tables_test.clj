@@ -60,7 +60,7 @@
       (let [entity (nth (api/all-entities) 1)
             ps     (api/entity-properties entity)
             string (platform-agnostic
-                    "(id AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER,\n influenced INTEGER)")]
+                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER,\n influenced INTEGER)")]
         (is (= [string
                 {entity
                  [{:name      "members" :type {:coll :reference
@@ -84,7 +84,7 @@
       (let [entity (last (drop-last 1 (api/all-entities)))
             ps     (api/entity-properties entity)
             string (platform-agnostic
-                    "(id AUTO_INCREMENT PRIMARY KEY,\n more_info VARCHAR(30))")]
+                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n more_info VARCHAR(30))")]
         (is (= [string {entity []}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
 
@@ -110,38 +110,59 @@
            p5      {:name "guru" :type {:one :reference
                                         :to  ["Musician" "guru"]
                                         :gui :select-form}}
+           p6      {:name "influenced" :type {:coll :reference
+                                              :to   ["Band" "influenced"]
+                                              :gui  :table-view}}
+           p7      {:name      "owner" :type {:one :reference
+                                              :to  ["Musician"]
+                                              :gui :select-form}
+                    :gui-label "Name"}
            entity0 "Musician"
            entity1 "Band"
+           entity3 "SocialMediaProfile"
            crd0    (api/property-reference entity0 p0)
            crd1    (api/property-reference entity0 p1)
            crd2    (api/property-reference entity1 p2)
            crd3    (api/property-reference entity0 p3)
            crd4    (api/property-reference entity0 p4)
-           crd5    (api/property-reference entity0 p5)]
+           crd5    (api/property-reference entity0 p5)
+           crd6    (api/property-reference entity1 p6)
+           crd7    (api/property-reference entity3 p7)]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
         (is
          (= {:create-tables
              [{:ad-entity-plural
-               "Musicians_instruments__Instruments_players_mtm" ,
+               "Musicians_instruments__Instruments_players_mtm"
                :ad-props-create-table
                " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id INTEGER REFERENCES Instruments(id)"}]}
-            (tbl/make-create-tbl-keys crd1 entity0 p1 nil {}))))
+            (tbl/make-create-tbl-keys crd1 entity0 p1 nil {})))
+        (is (= {:create-tables
+                [{:ad-entity-plural
+                  "Socialmediaprofiles_owner__Musicians_social_profile_oto" ,
+                  :ad-props-create-table
+                  " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+               (tbl/make-create-tbl-keys crd7 entity3 p7 nil {}))))
        (eval-in-environment
         :mysql
         (is (= {} (tbl/make-create-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {} (tbl/make-create-tbl-keys crd3 entity0 p3 nil {})))
         (is (= {:create-tables
-                [{:ad-entity-plural "Musicians_honors_smpl_coll" ,
+                [{:ad-entity-plural "Musicians_honors_smpl_coll"
                   :ad-props-create-table
-                  " id AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)"}]}
+                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)"}]}
                (tbl/make-create-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {:create-tables
-                [{:ad-entity-plural "Musicians_guru_r_oto" ,
+                [{:ad-entity-plural "Musicians_guru_r_oto"
                   :ad-props-create-table
-                  " id AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r)"}]}
-               (tbl/make-create-tbl-keys crd5 entity0 p5 nil {}))))))))
+                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r)"}]}
+               (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
+        (is (= {:create-tables
+                [{:ad-entity-plural "Musicians_influenced_r_mtm" ,
+                  :ad-props-create-table
+                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
+               (tbl/make-create-tbl-keys crd6 entity0 p6 nil {}))))))))
 
 ;; (deftest build-additional-templates-keys-test
 ;;   (testing "Returned keys intended to fulfill create table template."

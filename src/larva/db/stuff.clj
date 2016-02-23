@@ -21,7 +21,7 @@
     :json     "JSON"
     :binary   "BINARY"
     :pass     "VARCHAR(300)"
-    :id       "AUTO_INCREMENT"}
+    :id       "INTEGER AUTO_INCREMENT"}
    :h2
    {:str      "VARCHAR(30)" :text   "TEXT"
     :num      "INTEGER"     :bignum "BIGINT" :float     "FLOAT" :bigfloat "DOUBLE"
