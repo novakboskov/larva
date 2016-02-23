@@ -30,8 +30,8 @@
   {:create-tbl [CreateTableMap] :drop  [DropMap]
    :query      [QueryMap]       :alter [AlterMap]})
 
-(defn- make-id-column-name [entity]
-  (str (drill-out-name-for-db entity) "_id"))
+(defn- make-id-column-name [entity & recursive]
+  (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
 
 (defn- get-cardinality-keyword [cardinality]
   (cond (nil? cardinality)                    :simple-collection
@@ -80,38 +80,74 @@
          props-w-refs]))))
 
 (defn- build-additional-tbl-create-tbl-string
-  [cardinality entity args db-type]
-  (let [crd      (get-cardinality-keyword cardinality)
-        db-types (make-db-data-types-config :spec args :db-type db-type)
-        uniq     (case crd :many-to-many false :one-to-one true)]
-    ((->> database-grammar db-type :referential-table-columns) db-types
-     [(make-id-column-name entity) (build-db-table-name entity args) "id"
-      uniq]
-     [(make-id-column-name (:many-to-many cardinality))
-      (build-db-table-name (:many-to-many cardinality) args) "id" uniq])))
+  [cardinality entity property args db-type]
+  (let [crd       (get-cardinality-keyword cardinality)
+        db-types  (make-db-data-types-config :spec args :db-type db-type)
+        recursive (contains? cardinality :recursive)
+        uniq      (if (= crd :one-to-one) true)
+        non-recursive-columns
+        #(let [tbl1 (build-db-table-name entity args)
+               tbl2 (build-db-table-name (% cardinality) args)]
+           ((->> database-grammar db-type :referential-table-columns) db-types
+            [(make-id-column-name tbl1) tbl1 "id" uniq]
+            [(make-id-column-name tbl1) tbl2 "id" uniq]))
+        recursive-columns
+        #(let [tbl (build-db-table-name entity args)]
+           ((->> database-grammar db-type :referential-table-columns) db-types
+            [(make-id-column-name tbl) tbl "id" uniq]
+            [(make-id-column-name tbl true) tbl "id" uniq]))]
+    (if (not recursive)
+      (case crd
+        :many-to-many (non-recursive-columns :many-to-many)
+        :one-to-one   (non-recursive-columns :one-to-one)
+        :simple-collection
+        (let [tbl (build-db-table-name entity)]
+          ((->> database-grammar db-type :referential-table-columns) db-types
+           [(make-id-column-name tbl) tbl "id"
+            (drill-out-name-for-db (:name property))
+            (get-in property [:type :coll])])))
+      (recursive-columns))))
 
-(s/defn ^:private make-create-tbl-keys :- CreateTableMap
-  [cardinality entity property args db-type keys-map]
-  (let [crd (get-cardinality-keyword cardinality)]
-    (if (or (= crd :many-to-many) (= crd :one-to-one))
-      {:ad-entity-plural (build-db-table-name entity args)
-       :ad-props-create-table
-       (build-additional-tbl-create-tbl-string cardinality entity args db-type)}
-      keys-map)))
-
-(defn- build-tbl-name
+(defn- build-additional-tbl-name
   "Building name of an additional table which is relation by-product."
   [inferred-card entity property args]
-  (let [crd (get-cardinality-keyword inferred-card)]
-    (case crd
-      :many-to-many
-      (str (build-db-table-name entity args)
-           "_" (build-db-table-name (:many-to-many inferred-card) args)
-           "_mtm")
-      :one-to-one
-      (str (build-db-table-name entity args true)
-           "_" (build-db-table-name (:one-to-one inferred-card) args true)
-           "_oto"))))
+  (let [crd       (get-cardinality-keyword inferred-card)
+        recursive (contains? inferred-card :recursive)
+        not-recursive-table-name-base
+        #(str (build-db-table-name entity args true) "_"
+              (drill-out-name-for-db (:name property)) "__"
+              (build-db-table-name (:one-to-one inferred-card) args) "_"
+              (drill-out-name-for-db (:back-property inferred-card)) %)
+        recursive-table-name-base
+        #(str (build-db-table-name entity) "_"
+              (drill-out-name-for-db (:back-property inferred-card)) %)]
+    (if (not recursive)
+      (case crd
+        :many-to-many (not-recursive-table-name-base "_mtm")
+        :one-to-one   (not-recursive-table-name-base "_oto")
+        :simple-collection
+        (str (build-db-table-name entity) "_"
+             (drill-out-name-for-db (:name property))
+             "_smpl_coll"))
+      (case crd
+        :one-to-one   (recursive-table-name-base "_r_oto")
+        :many-to-many (recursive-table-name-base "_r_mtm")))))
+
+(s/defn make-create-tbl-keys :- CreateTableMap
+  "Make templates keys originated from one-to-one, many-to-many, one-to-many
+   (when model expresses a simple collection) and recursive relations between
+   entities."
+  [cardinality entity property args db-type keys-map]
+  (let [crd       (get-cardinality-keyword cardinality)
+        recursive (contains? cardinality :recursive)]
+    (if (or (= crd :many-to-many) (= crd :one-to-one)
+            (= crd :simple-collection) recursive)
+      {:ad-entity-plural (build-additional-tbl-name cardinality entity property
+                                                    args)
+       :ad-props-create-table
+       (build-additional-tbl-create-tbl-string cardinality
+                                               entity property args db-type)}
+      keys-map)))
 
 (defn- form-already-made-item [inferred-cardinality entity property]
   (let [crd (get-cardinality-keyword inferred-cardinality)]
@@ -136,11 +172,12 @@
       (merge-with
        concat keys-map
        {:drops [{:ad-entity-plural
-                 (build-tbl-name inferred-card entity property args)}]})
+                 (build-additional-tbl-name inferred-card entity property args)}]})
       keys-map)))
 
-
-(defn- make-keys [inferred-card entity property made-item made args db-type]
+(defn- make-keys
+  "Building all the templates keys originated from relations between entities."
+  [inferred-card entity property made-item made args db-type]
   (if (not (get-corresponding-made-item made-item made))
     (let [params [inferred-card entity property args db-type]]
       (->> (apply make-create-tbl-keys (conj params {}))

@@ -86,13 +86,33 @@
       (is (= [string {entity []}]
              (tbl/build-db-create-table-string entity ps :mysql true nil))))))
 
-;; (deftest build-additional-templates-keys-test
-;;   (testing "Returned keys intended to fulfill create table template."
-;;     (eval-in-program-model-context
-;;      custom-property-datatype
-;;      (let [ents      (api/all-entities)
-;;            db-t      :postgres
-;;            ent-props (map #(second
-;;                             (tbl/build-db-create-table-string %1 %2 db-t false))
-;;                           ents (map #(api/entity-properties %) ents))]
-;;        (is (= ent-props (tbl/build-additional-templates-keys ent-props db-t nil)))))))
+(deftest make-create-tbl-keys-test
+  (testing "Correctness of template keys contributed by make-create-table-keys."
+    (eval-in-program-model-context
+     custom-property-datatype
+     (eval-in-environment
+      :postgres
+      (let [p0     {:name      "band" :type {:one :reference
+                                             :to  ["Band" "members"]
+                                             :gui :select-form}
+                    :gui-label "Of band"}
+            p1     {:name "instruments" :type {:coll :reference
+                                               :to   ["Instrument" "players"]
+                                               :gui  :table-view}}
+            entity "Musician"
+            crd0   (api/property-reference entity p0)
+            crd1   (api/property-reference entity p1)]
+        (is (= {} (tbl/make-create-tbl-keys crd0 entity p0 nil :postgres {})))
+        (is (= {} (tbl/make-create-tbl-keys crd1 entity p1 nil :postgres {}))))))))
+
+(deftest build-additional-templates-keys-test
+  (testing "Returned keys intended to fulfill create table template."
+    (eval-in-program-model-context
+     custom-property-datatype
+     (let [ents      (api/all-entities)
+           db-t      :postgres
+           ent-props (map #(second
+                            (tbl/build-db-create-table-string %1 %2 db-t false
+                                                              nil))
+                          ents (map #(api/entity-properties %) ents))]
+       (is (= ent-props (tbl/build-additional-templates-keys ent-props db-t nil)))))))

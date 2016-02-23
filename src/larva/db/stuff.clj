@@ -37,26 +37,36 @@
    :mongodb
    {}})
 
+(defn- simple-colection-table-columns [prim-key db-types column]
+  (str "id " (:id db-types) " " prim-key "," (System/lineSeparator)
+       (nth column 0) " " (:num db-types) " REFERENCES"
+       (nth column 1) "(" (nth column 2)  ")," (System/lineSeparator)
+       (nth column 3) " " ((nth 4 column) db-types)))
+
 (defn- mysql-referential-table-columns
-  [prim-key db-types first second]
-  (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
-                     (nth % 1) "(" (nth % 2)  ")")]
-    (str "id " (:id db-types) " " (prim-key) ","
-         (System/lineSeparator)
-         (column first) "," (System/lineSeparator) (column second)
-         (let [uniqs (for [c [first second] :when (nth c 3)] (nth c 0))]
-           (if (not-empty uniqs) (str "," (System/lineSeparator)
-                                      "UNIQUE(" (cs/join ", " uniqs) ")")
-               "")))))
+  ([prim-key db-types first second]
+   (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
+                      (nth % 1) "(" (nth % 2)  ")")]
+     (str "id " (:id db-types) " " prim-key ","
+          (System/lineSeparator)
+          (column first) "," (System/lineSeparator) (column second)
+          (let [uniqs (for [c [first second] :when (nth c 3)] (nth c 0))]
+            (if (not-empty uniqs) (str "," (System/lineSeparator)
+                                       "UNIQUE(" (cs/join ", " uniqs) ")")
+                "")))))
+  ([prim-key db-types column]
+   (simple-colection-table-columns prim-key db-types column)))
 
 (defn- psql-referential-table-columns
-  [prim-key db-types first second]
-  (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
-                     (nth % 1) "(" (nth % 2)  ")"
-                     (if (nth 3 %) " UNIQUE" ""))]
-    (str "id " (:id db-types) " " (prim-key) ","
-         (System/lineSeparator)
-         (column first) "," (System/lineSeparator) (column second))))
+  ([prim-key db-types first second]
+   (let [column #(str (nth % 0) " " (:num db-types) " REFERENCES "
+                      (nth % 1) "(" (nth % 2)  ")"
+                      (if (nth 3 %) " UNIQUE" ""))]
+     (str "id " (:id db-types) " " prim-key ","
+          (System/lineSeparator)
+          (column first) "," (System/lineSeparator) (column second))))
+  ([prim-key db-types column]
+   (simple-colection-table-columns prim-key db-types column)))
 
 (def database-grammar
   {:postgres
