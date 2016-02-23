@@ -125,9 +125,10 @@
   Returns that configuration."
   [& {:keys [spec db-type force]}]
   (if (or (not (.exists default-db-data-types-config)) force)
-    (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))]
+    (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))
+          content (db-type database-types-config)]
       (utils/spit-data default-db-data-types-config
-                       (or (db-type database-types-config) {}))))
+                       (if content {db-type content} {}))))
   (utils/slurp-as-data default-db-data-types-config))
 
 (defn build-plural-for-db-name

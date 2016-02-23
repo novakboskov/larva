@@ -18,7 +18,7 @@
          default#    larva.db.utils/default-db-data-types-config
          to-restore# (if (.exists default#) (larva.utils/slurp-as-data default#))]
      (if ~conf-for-type
-       (larva.utils/spit-data default# (~conf-for-type stuff#))
+       (larva.utils/spit-data default# {~conf-for-type (~conf-for-type stuff#)})
        (clojure.java.io/delete-file default# true))
      ~@forms
      (clojure.java.io/delete-file default#)
@@ -78,18 +78,18 @@
  Do not test scenario when function is called with no parameters."
     (eval-in-environment
      false
-     (is (= (:postgres stuff/database-types-config)
+     (is (= {:postgres (:postgres stuff/database-types-config)}
             (utils/make-db-data-types-config
              :spec {:model standard-program-with-meta}))))
     (eval-in-environment
      false
-     (is (= (:mysql stuff/database-types-config)
+     (is (= {:mysql (:mysql stuff/database-types-config)}
             (utils/make-db-data-types-config :db-type :mysql))))
     (eval-in-environment
      :postgres
-     (is (= (:h2 stuff/database-types-config)
+     (is (= {:h2 (:h2 stuff/database-types-config)}
             (utils/make-db-data-types-config :db-type :h2 :force true))))
     (eval-in-environment
      :postgres
-     (is (= (:postgres stuff/database-types-config)
+     (is (= {:postgres (:postgres stuff/database-types-config)}
             (utils/make-db-data-types-config :db-type :h2))))))

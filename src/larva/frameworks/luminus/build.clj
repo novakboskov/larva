@@ -14,14 +14,14 @@
         :else      nil))
 
 (defn- add-additional
-  [references templates db-type options]
+  [references templates options]
   (let [render-options (:render-options templates) force (:force options)
         args           (build-api-args-map options)
         ;; db-options
         ;; {:alter-tables (tbl/build-alter-tables-strings references)}
         ]
     ;; TODO:
-    (doseq [k (tbl/build-additional-templates-keys references db-type args)]
+    (doseq [k (tbl/build-additional-templates-keys references args options)]
       (render-assets [:additional-migrations-sql-up templates]
                      (merge k render-options)))
     ;; (render-assets [(:additional-migrations-sql-up templates)
