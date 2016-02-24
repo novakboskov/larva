@@ -16,7 +16,7 @@
       :postgres
       (let [entity (nth (api/all-entities) 0)
             ps     (api/entity-properties entity)
-            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER,\n social_profile INTEGER,\n instruments INTEGER,\n knows_how_to_repair INTEGER,\n guru INTEGER,\n disrespected_by INTEGER,\n mentor INTEGER)")]
+            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER,\n social_profile INTEGER,\n instruments INTEGER,\n knows_how_to_repair INTEGER,\n disrespected_by INTEGER,\n mentor INTEGER)")]
         (is (= [string
                 {"Musician"
                  [{:name "honors" :type {:coll :str}}
@@ -60,7 +60,7 @@
       (let [entity (nth (api/all-entities) 1)
             ps     (api/entity-properties entity)
             string (platform-agnostic
-                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER,\n influenced INTEGER)")]
+                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER)")]
         (is (= [string
                 {entity
                  [{:name      "members" :type {:coll :reference
@@ -190,6 +190,9 @@
                       :to   ["Category" "subcategories"]
                       :gui  :table-view}
                      :gui-label "subcategories"}
+            p6      {:name "guru" :type {:one :reference
+                                         :to  ["Musician" "guru"]
+                                         :gui :select-form}}
             entity0 "Musician"
             entity1 "Band"
             entity2 "Category"
@@ -198,7 +201,8 @@
             crd2    (api/property-reference entity1 p2)
             crd3    (api/property-reference entity1 p3)
             crd4    (api/property-reference entity0 p4)
-            crd5    (api/property-reference entity2 p5)]
+            crd5    (api/property-reference entity2 p5)
+            crd6    (api/property-reference entity0 p6)]
         (is (= {} (tbl/make-drop-tbl-keys crd0 entity0 p0 nil {})))
         (is (= {} (tbl/make-drop-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {:drops [{:ad-entity-plural "Musicians__honors__smpl_coll"}]}
@@ -208,7 +212,9 @@
         (is (= {:drops [{:ad-entity-plural "Musicians__disrespected_by__Mentors__disrespect__oto"}]}
                (tbl/make-drop-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {:drops [{:ad-entity-plural "Categories__subcategories__r_mtm"}]}
-               (tbl/make-drop-tbl-keys crd5 entity2 p5 nil {}))))))))
+               (tbl/make-drop-tbl-keys crd5 entity2 p5 nil {})))
+        (is (= {:drops [{:ad-entity-plural "Musicians__guru__r_oto"}]}
+               (tbl/make-drop-tbl-keys crd6 entity0 p6 nil {}))))))))
 
 ;; (deftest build-additional-templates-keys-test
 ;;   (testing "Returned keys intended to fulfill create table template."

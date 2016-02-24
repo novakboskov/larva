@@ -136,10 +136,12 @@
   (str (drill-out-name-for-db name) "s"))
 
 (defn build-plural-for-entity
-  "If program specifies entity plural it will be return, otherwise it will be
+  "If program specifies entity plural it will be returned, otherwise it will be
   constructed using suffix 's'."
-  [entity-signature model-source]
-  (let [entity (api/entity-info entity-signature model-source)]
+  [entity-signature & [model-source]]
+  (let [entity (if model-source (api/entity-info entity-signature
+                                                 {:model model-source})
+                   (api/entity-info entity-signature))]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (build-plural-for-db-name entity-signature))))
 
@@ -147,9 +149,8 @@
   "Builds DB table name from plural if model-source is present or from bare name
   if it's not."
   [entity-signature & [model-source singular]]
-  (let [to-capt (if singular
-                  (drill-out-name-for-db entity-signature)
-                  (if model-source
-                    (build-plural-for-entity entity-signature model-source)
-                    (build-plural-for-db-name entity-signature)))]
+  (let [to-capt (cond singular (drill-out-name-for-db entity-signature)
+                      model-source
+                      (build-plural-for-entity entity-signature model-source)
+                      :else (build-plural-for-entity entity-signature))]
     (cs/capitalize to-capt)))

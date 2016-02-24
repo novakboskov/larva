@@ -21,10 +21,10 @@
 (s/def DropMap
   {:drops [{:ad-entity-plural s/Str}]})
 
-(s/def QueryMap
+(s/def AlterMap
   {})
 
-(s/def AlterMap
+(s/def QueryMap
   {})
 
 (s/def KeysMap
@@ -50,9 +50,11 @@
   [prop-type-key cardinality db-types]
   (let [crd (get-cardinality-keyword cardinality)]
     (cond (utils/valid? sch/APIReferenceToSingleEntity prop-type-key)
-          [(:num db-types) true]
+          (if (contains? cardinality :recursive) [false true]
+              [(:num db-types) true])
           (utils/valid? sch/APICollectionWithReference prop-type-key)
-          (if (= crd :many-to-one) [false true] [(:num db-types) true])
+          (if (or (= crd :many-to-one) (contains? cardinality :recursive))
+            [false true] [(:num db-types) true])
           (utils/valid? sch/APICollection prop-type-key)
           [false true]
           (utils/valid? sch/APISimpleDataType prop-type-key)
@@ -81,7 +83,7 @@
            (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
            (if type (conj strings (str (drill-out-name-for-db (:name p)) " " type))
                strings)))
-        [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings)")")
+        [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings) ")")
          props-w-refs]))))
 
 (defn- build-additional-tbl-create-tbl-string
@@ -145,8 +147,8 @@
   [cardinality entity property args keys-map]
   (let [crd       (get-cardinality-keyword cardinality)
         recursive (contains? cardinality :recursive)]
-    (if (or (= crd :many-to-many) (= crd :one-to-one)
-            (= crd :simple-collection) recursive)
+    (if (or (#{:many-to-many :one-to-one :simple-collection} crd)
+            recursive)
       (merge-with
        concat keys-map
        {:create-tables [{:ad-entity-plural
@@ -157,10 +159,19 @@
                           cardinality entity property args)}]})
       keys-map)))
 
-(defn- form-already-made-item [inferred-cardinality entity property]
-  (let [crd (get-cardinality-keyword inferred-cardinality)]
-    [crd {:src  [entity (:name property)]
-          :dest [(crd inferred-cardinality) (:back-perty inferred-cardinality)]}]))
+(s/defn make-drop-tbl-keys :- DropMap
+  [inferred-card entity property args keys-map]
+  (let [crd (get-cardinality-keyword inferred-card)]
+    (if (#{:one-to-one :many-to-many :simple-collection} crd)
+      (merge-with
+       concat keys-map
+       {:drops [{:ad-entity-plural
+                 (build-additional-tbl-name inferred-card entity property args)}]})
+      keys-map)))
+
+(s/defn make-alter-tbl-keys :- AlterMap
+  [inferred-card entity property args keys-map]
+  )
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
@@ -173,27 +184,21 @@
                                              :dest (:src (second %))}]))
             (filter #(not (= :simple-collection (first %))) made)))))
 
-(s/defn make-drop-tbl-keys :- DropMap
-  [inferred-card entity property args keys-map]
-  (let [crd (get-cardinality-keyword inferred-card)]
-    (if (contains? #{:one-to-one :many-to-many :simple-collection} crd)
-      (merge-with
-       concat keys-map
-       {:drops [{:ad-entity-plural
-                 (build-additional-tbl-name inferred-card entity property args)}]})
-      keys-map)))
-
 (defn- make-keys
   "Building all the templates keys originated from relations between entities."
   [inferred-card entity property made-item made args]
   (if (not (get-corresponding-made-item made-item made))
     (let [params [inferred-card entity property args]]
       (->> (apply make-create-tbl-keys (conj params {}))
-           (conj params)
-           (apply make-drop-tbl-keys)
-           ;; (apply make-alter-tbl-keys)
+           (conj params) (apply make-drop-tbl-keys)
+           (conj params) (apply make-alter-tbl-keys)
            ;; (apply make-queries-keys)
            ))))
+
+(defn- form-already-made-item [inferred-cardinality entity property]
+  (let [crd (get-cardinality-keyword inferred-cardinality)]
+    [crd {:src  [entity (:name property)]
+          :dest [(crd inferred-cardinality) (:back-perty inferred-cardinality)]}]))
 
 (s/defn ^:always-validate build-additional-templates-keys
   "Building keys aimed to fulfill templates that create up and down migrations

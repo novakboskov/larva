@@ -70,8 +70,13 @@
   (testing "Returned plural according to provided program."
     (eval-in-program-model-context
      entities-with-signature-plural
-     (is (= "categories" (utils/build-plural-for-entity "Category" {})))
-     (is (= "musicians" (utils/build-plural-for-entity "Musician" {}))))))
+     (is (= "categories" (utils/build-plural-for-entity "Category")))
+     (is (= "musicians" (utils/build-plural-for-entity "Musician"))))
+    (is (= "categories" (utils/build-plural-for-entity
+                         "Category" custom-property-datatype)))
+    (eval-in-program-model-context
+     custom-property-datatype
+     (is (= "categories" (utils/build-plural-for-entity "Category"))))))
 
 (deftest make-db-data-types-config-test
   (testing "database types configuration file on the right place.
