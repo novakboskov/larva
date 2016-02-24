@@ -119,24 +119,24 @@
   (let [crd       (get-cardinality-keyword inferred-card)
         recursive (contains? inferred-card :recursive)
         not-recursive-table-name-base
-        #(str (build-db-table-name entity args) "_"
+        #(str (build-db-table-name entity args) "__"
               (drill-out-name-for-db (:name property)) "__"
-              (build-db-table-name (%1 inferred-card) args) "_"
+              (build-db-table-name (%1 inferred-card) args) "__"
               (drill-out-name-for-db (:back-property inferred-card)) %2)
         recursive-table-name-base
-        #(str (build-db-table-name entity) "_"
+        #(str (build-db-table-name entity) "__"
               (drill-out-name-for-db (:back-property inferred-card)) %)]
     (if (not recursive)
       (case crd
-        :many-to-many (not-recursive-table-name-base :many-to-many "_mtm")
-        :one-to-one   (not-recursive-table-name-base :one-to-one "_oto")
+        :many-to-many (not-recursive-table-name-base :many-to-many "__mtm")
+        :one-to-one   (not-recursive-table-name-base :one-to-one "__oto")
         :simple-collection
-        (str (build-db-table-name entity) "_"
+        (str (build-db-table-name entity) "__"
              (drill-out-name-for-db (:name property))
-             "_smpl_coll"))
+             "__smpl_coll"))
       (case crd
-        :one-to-one   (recursive-table-name-base "_r_oto")
-        :many-to-many (recursive-table-name-base "_r_mtm")))))
+        :one-to-one   (recursive-table-name-base "__r_oto")
+        :many-to-many (recursive-table-name-base "__r_mtm")))))
 
 (s/defn make-create-tbl-keys :- CreateTableMap
   "Make templates keys originated from one-to-one, many-to-many, one-to-many
@@ -173,10 +173,10 @@
                                              :dest (:src (second %))}]))
             (filter #(not (= :simple-collection (first %))) made)))))
 
-(s/defn ^:private make-drop-tbl-keys :- DropMap
-  [inferred-card entity property args _ keys-map]
+(s/defn make-drop-tbl-keys :- DropMap
+  [inferred-card entity property args keys-map]
   (let [crd (get-cardinality-keyword inferred-card)]
-    (if (or (= crd :many-to-many) (= crd :one-to-one))
+    (if (contains? #{:one-to-one :many-to-many :simple-collection} crd)
       (merge-with
        concat keys-map
        {:drops [{:ad-entity-plural
