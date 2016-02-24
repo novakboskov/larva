@@ -16,20 +16,13 @@
   [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")])
 
 (s/def CreateTableMap
-  (:create-tables [{:ad-entity-plural s/Str :ad-props-create-table s/Str}]))
-
-(s/def DropMap
-  {:drops [{:ad-entity-plural s/Str}]})
+  {:create-tables [{:ad-entity-plural s/Str :ad-props-create-table s/Str}]})
 
 (s/def AlterMap
-  {})
+  {:alter-tables [{:table s/Str :fk-name s/Str :on s/Str :to-table s/Str}]})
 
 (s/def QueryMap
   {})
-
-(s/def KeysMap
-  {:create-tbl [CreateTableMap] :drop  [DropMap]
-   :query      [QueryMap]       :alter [AlterMap]})
 
 (defn- make-id-column-name [entity & recursive]
   (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
@@ -159,16 +152,6 @@
                           cardinality entity property args)}]})
       keys-map)))
 
-(s/defn make-drop-tbl-keys :- DropMap
-  [inferred-card entity property args keys-map]
-  (let [crd (get-cardinality-keyword inferred-card)]
-    (if (#{:one-to-one :many-to-many :simple-collection} crd)
-      (merge-with
-       concat keys-map
-       {:drops [{:ad-entity-plural
-                 (build-additional-tbl-name inferred-card entity property args)}]})
-      keys-map)))
-
 (s/defn make-alter-tbl-keys :- AlterMap
   [inferred-card entity property args keys-map]
   )
@@ -190,7 +173,6 @@
   (if (not (get-corresponding-made-item made-item made))
     (let [params [inferred-card entity property args]]
       (->> (apply make-create-tbl-keys (conj params {}))
-           (conj params) (apply make-drop-tbl-keys)
            (conj params) (apply make-alter-tbl-keys)
            ;; (apply make-queries-keys)
            ))))

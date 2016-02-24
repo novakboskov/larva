@@ -164,58 +164,6 @@
                   " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
                (tbl/make-create-tbl-keys crd6 entity0 p6 nil {}))))))))
 
-(deftest make-drop-tbl-keys-test
-  (testing "Correctness of template keys contributed by make-drop-tbl-keys."
-    (eval-in-program-model-context
-     custom-property-datatype
-     (eval-in-environment
-      :postgres
-      (let [p0      {:name      "band" :type {:one :reference
-                                              :to  ["Band" "members"]
-                                              :gui :select-form}
-                     :gui-label "Of band"}
-            p1      {:name "honors" :type {:coll :str}}
-            p2      {:name      "members" :type {:coll :reference
-                                                 :to   ["Musician"]}
-                     :gui-label "Members"}
-            p3      {:name      "participated" :type {:coll :reference
-                                                      :to   ["Festival"]
-                                                      :gui  :table-view}
-                     :gui-label "Participated in"}
-            p4      {:name "disrespected by" :type {:one :reference
-                                                    :to  ["Mentor" "disrespect"]
-                                                    :gui :select-form}}
-            p5      {:name      "subcategories" :type
-                     {:coll :reference
-                      :to   ["Category" "subcategories"]
-                      :gui  :table-view}
-                     :gui-label "subcategories"}
-            p6      {:name "guru" :type {:one :reference
-                                         :to  ["Musician" "guru"]
-                                         :gui :select-form}}
-            entity0 "Musician"
-            entity1 "Band"
-            entity2 "Category"
-            crd0    (api/property-reference entity0 p0)
-            crd1    (api/property-reference entity0 p1)
-            crd2    (api/property-reference entity1 p2)
-            crd3    (api/property-reference entity1 p3)
-            crd4    (api/property-reference entity0 p4)
-            crd5    (api/property-reference entity2 p5)
-            crd6    (api/property-reference entity0 p6)]
-        (is (= {} (tbl/make-drop-tbl-keys crd0 entity0 p0 nil {})))
-        (is (= {} (tbl/make-drop-tbl-keys crd2 entity1 p2 nil {})))
-        (is (= {:drops [{:ad-entity-plural "Musicians__honors__smpl_coll"}]}
-               (tbl/make-drop-tbl-keys crd1 entity0 p1 nil {})))
-        (is (= {:drops [{:ad-entity-plural "Bands__participated__Festivals__participants__mtm"}]}
-               (tbl/make-drop-tbl-keys crd3 entity1 p3 nil {})))
-        (is (= {:drops [{:ad-entity-plural "Musicians__disrespected_by__Mentors__disrespect__oto"}]}
-               (tbl/make-drop-tbl-keys crd4 entity0 p4 nil {})))
-        (is (= {:drops [{:ad-entity-plural "Categories__subcategories__r_mtm"}]}
-               (tbl/make-drop-tbl-keys crd5 entity2 p5 nil {})))
-        (is (= {:drops [{:ad-entity-plural "Musicians__guru__r_oto"}]}
-               (tbl/make-drop-tbl-keys crd6 entity0 p6 nil {}))))))))
-
 ;; (deftest build-additional-templates-keys-test
 ;;   (testing "Returned keys intended to fulfill create table template."
 ;;     (eval-in-program-model-context
