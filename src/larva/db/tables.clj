@@ -16,13 +16,20 @@
   [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")])
 
 (s/def CreateTableMap
-  {:create-tables [{:ad-entity-plural s/Str :ad-props-create-table s/Str}]})
+  {:ad-entity-plural s/Str :ad-props-create-table s/Str})
 
 (s/def AlterMap
-  {:alter-tables [{:table s/Str :fk-name s/Str :on s/Str :to-table s/Str}]})
+  {:table s/Str :fk-name s/Str :on s/Str :to-table s/Str})
 
 (s/def QueryMap
   {})
+
+(s/def TableKeys
+  {(s/optional-key :create-tables) [CreateTableMap]})
+
+(s/def AlterKeys
+  {(s/optional-key :create-tables) [CreateTableMap]
+   (s/optional-key :alter-tables)  [AlterMap]})
 
 (defn- make-id-column-name [entity & recursive]
   (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
@@ -133,7 +140,7 @@
         :one-to-one   (recursive-table-name-base "__r_oto")
         :many-to-many (recursive-table-name-base "__r_mtm")))))
 
-(s/defn make-create-tbl-keys :- CreateTableMap
+(s/defn ^:always-validate make-create-tbl-keys :- TableKeys
   "Make templates keys originated from one-to-one, many-to-many, one-to-many
    (when model expresses a simple collection) and recursive relations between
    entities."
@@ -152,9 +159,30 @@
                           cardinality entity property args)}]})
       keys-map)))
 
-(s/defn make-alter-tbl-keys :- AlterMap
-  [inferred-card entity property args keys-map]
-  )
+(s/defn ^:always-validate make-alter-tbl-keys :- AlterKeys
+  [cardinality entity property args keys-map :- TableKeys]
+  (if-let [crd (#{:many-to-one :one-to-many}
+                (get-cardinality-keyword cardinality))]
+    (let [merge-keys     #(merge-with concat keys-map {:alter-tables [%]})
+          this-tbl       (build-db-table-name entity args)
+          referenced-tbl (build-db-table-name (crd cardinality) args)
+          prop-name      (:name property)]
+      (case crd
+        :one-to-many
+        (merge-keys {:table    this-tbl
+                     :fk-name  (build-foreign-key-name referenced-tbl this-tbl
+                                                       prop-name)
+                     :on       (drill-out-name-for-db prop-name)
+                     :to-table referenced-tbl})
+        :many-to-one
+        (merge-keys {:table    referenced-tbl
+                     :fk-name  (build-foreign-key-name
+                                this-tbl referenced-tbl
+                                (:back-property cardinality))
+                     :on       (drill-out-name-for-db
+                                (:back-property cardinality))
+                     :to-table this-tbl})))
+    keys-map))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))

@@ -392,7 +392,7 @@
                    :gui-label "Members"}
                   {:name      "dream about" :type {:coll :reference
                                                    :to   ["Musician"]}
-                   :gui-label "Members"}
+                   :gui-label "Dream about"}
                   {:name      "category" :type {:one :reference
                                                 :to  ["Category" "bands"]
                                                 :gui :drop-list}

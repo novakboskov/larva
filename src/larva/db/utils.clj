@@ -154,3 +154,6 @@
                       (build-plural-for-entity entity-signature model-source)
                       :else (build-plural-for-entity entity-signature))]
     (cs/capitalize to-capt)))
+
+(defn build-foreign-key-name [p-key-tbl f-key-tbl prop-name]
+  (str "FK__" f-key-tbl "__" p-key-tbl "__" (drill-out-name-for-db prop-name)))

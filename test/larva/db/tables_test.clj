@@ -68,7 +68,7 @@
                    :gui-label "Members"}
                   {:name      "dream about" :type {:coll :reference
                                                    :to   ["Musician"]}
-                   :gui-label "Members"}
+                   :gui-label "Dream about"}
                   {:name      "category" :type {:one :reference
                                                 :to  ["Category" "bands"]
                                                 :gui :drop-list}
@@ -88,8 +88,9 @@
         (is (= [string {entity []}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
 
-(deftest make-create-tbl-keys-test
-  (testing "Correctness of template keys contributed by make-create-table-keys."
+(deftest make-create-tbl-keys&make-alter-tbl-keys-test
+  (testing "Correctness of template keys contributed by make-create-table-keys
+            and make-alter-tbl-keys."
     (eval-in-program-model-context
      custom-property-datatype
      (let [p0      {:name      "band" :type {:one :reference
@@ -101,7 +102,7 @@
                                                :gui  :table-view}}
            p2      {:name      "dream about" :type {:coll :reference
                                                     :to   ["Musician"]}
-                    :gui-label "Members"}
+                    :gui-label "Dream about"}
            p3      {:name      "dream band" :type {:one :reference
                                                    :to  ["Band" "dream about"]
                                                    :gui :select-form}
@@ -117,9 +118,12 @@
                                               :to  ["Musician"]
                                               :gui :select-form}
                     :gui-label "Name"}
+           p8      {:name      "members" :type {:coll :reference
+                                                :to   ["Musician"]}
+                    :gui-label "Members"}
            entity0 "Musician"
            entity1 "Band"
-           entity3 "SocialMediaProfile"
+           entity2 "SocialMediaProfile"
            crd0    (api/property-reference entity0 p0)
            crd1    (api/property-reference entity0 p1)
            crd2    (api/property-reference entity1 p2)
@@ -127,7 +131,8 @@
            crd4    (api/property-reference entity0 p4)
            crd5    (api/property-reference entity0 p5)
            crd6    (api/property-reference entity1 p6)
-           crd7    (api/property-reference entity3 p7)]
+           crd7    (api/property-reference entity2 p7)
+           crd8    (api/property-reference entity1 p8)]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -143,7 +148,24 @@
                   "Socialmediaprofiles__owner__Musicians__social_profile__oto"
                   :ad-props-create-table
                   " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
-               (tbl/make-create-tbl-keys crd7 entity3 p7 nil {}))))
+               (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
+        (is (= {:alter-tables [{:table    "Musicians"
+                                :fk-name  "FK__Musicians__Bands__band"
+                                :on       "band"
+                                :to-table "Bands"}]}
+               (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
+               (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
+        (is (= {:alter-tables [{:table    "Musicians"
+                                :fk-name  "FK__Musicians__Bands__dream_band"
+                                :on       "dream_band"
+                                :to-table "Bands"}]}
+               (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
+               (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd1 entity0 p1 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd4 entity0 p4 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {}))))
        (eval-in-environment
         :mysql
         (is (= {} (tbl/make-create-tbl-keys crd2 entity1 p2 nil {})))
@@ -162,7 +184,24 @@
                 [{:ad-entity-plural "Musicians__influenced__r_mtm" ,
                   :ad-props-create-table
                   " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
-               (tbl/make-create-tbl-keys crd6 entity0 p6 nil {}))))))))
+               (tbl/make-create-tbl-keys crd6 entity0 p6 nil {})))
+        (is (= {:alter-tables [{:table    "Musicians"
+                                :fk-name  "FK__Musicians__Bands__band"
+                                :on       "band"
+                                :to-table "Bands"}]}
+               (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
+               (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
+        (is (= {:alter-tables [{:table    "Musicians"
+                                :fk-name  "FK__Musicians__Bands__dream_band"
+                                :on       "dream_band"
+                                :to-table "Bands"}]}
+               (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
+               (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd1 entity0 p1 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd4 entity0 p4 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {}))))))))
 
 ;; (deftest build-additional-templates-keys-test
 ;;   (testing "Returned keys intended to fulfill create table template."
