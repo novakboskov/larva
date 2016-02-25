@@ -85,8 +85,11 @@
                                       connection sqls)))))
       queries)))
 
-(defn drill-out-name-for-db [name]
-  (-> name (cs/replace #"[^a-zA-Z0-9]" "_") cs/lower-case))
+(defn drill-out-name-for-db [name & [separator]]
+  (-> name (cs/replace #"[^a-zA-Z0-9]" (or separator "_")) cs/lower-case))
+
+(defn drill-out-name-for-clojure [name]
+  (drill-out-name-for-db name "-"))
 
 (defmulti build-sequence-string
   "Builds string suited for INSERT, CREATE TABLE or VALUES SQL statement.

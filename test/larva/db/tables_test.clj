@@ -4,6 +4,7 @@
              [program-api :as api]
              [program-api-test :refer [eval-in-program-model-context]]
              [test-data :refer [custom-property-datatype]]]
+            [larva.code-gen.common :as common]
             [larva.db
              [tables :as tbl]
              [utils-test :refer [eval-in-environment platform-agnostic]]]))
@@ -88,9 +89,9 @@
         (is (= [string {entity []}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
 
-(deftest make-create-tbl-keys&make-alter-tbl-keys-test
+(deftest partial-key-generation-test
   (testing "Correctness of template keys contributed by make-create-table-keys
-            and make-alter-tbl-keys."
+            make-queries-keys, and make-alter-tbl-keys."
     (eval-in-program-model-context
      custom-property-datatype
      (let [p0      {:name      "band" :type {:one :reference
@@ -132,7 +133,8 @@
            crd5    (api/property-reference entity0 p5)
            crd6    (api/property-reference entity1 p6)
            crd7    (api/property-reference entity2 p7)
-           crd8    (api/property-reference entity1 p8)]
+           crd8    (api/property-reference entity1 p8)
+           templ   "resources/templates/frameworks/luminus/larva-specific/db/sql/add-queries.sql"]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -149,6 +151,7 @@
                   :ad-props-create-table
                   " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
+        ;; make-alter-tbl-keys test
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__band"
                                 :on       "band"
@@ -165,7 +168,11 @@
         (is (= {} (tbl/make-alter-tbl-keys crd1 entity0 p1 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
-        (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {}))))
+        (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {})))
+        ;; make-queries-keys test
+        (is (= "--name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n--name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = (SELECT id FROM Bands WHERE id = :band)\n\n\n"
+               (common/render-template (slurp templ)
+                (tbl/make-queries-keys crd0 entity0 p0 nil {})))))
        (eval-in-environment
         :mysql
         (is (= {} (tbl/make-create-tbl-keys crd2 entity1 p2 nil {})))
@@ -185,6 +192,7 @@
                   :ad-props-create-table
                   " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
                (tbl/make-create-tbl-keys crd6 entity0 p6 nil {})))
+        ;; make-alter-tbl-keys test
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__band"
                                 :on       "band"

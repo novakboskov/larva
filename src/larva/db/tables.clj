@@ -22,7 +22,8 @@
   {:table s/Str :fk-name s/Str :on s/Str :to-table s/Str})
 
 (s/def QueryMap
-  {})
+  {:ent  s/Str :prop  s/Str :f-tbl s/Str :f-id s/Str :sign s/Str
+   :s-id s/Str :t-tbl s/Str :t-id  s/Str})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -30,6 +31,11 @@
 (s/def AlterKeys
   {(s/optional-key :create-tables) [CreateTableMap]
    (s/optional-key :alter-tables)  [AlterMap]})
+
+(s/def QueryKeys
+  {(s/optional-key :create-tables) [CreateTableMap]
+   (s/optional-key :alter-tables)  [AlterMap]
+   (s/optional-key :queries)       [QueryMap]})
 
 (defn- make-id-column-name [entity & recursive]
   (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
@@ -184,6 +190,29 @@
                      :to-table this-tbl})))
     keys-map))
 
+(s/defn ^:always-validate make-queries-keys :- QueryKeys
+  [cardinality entity property args keys-map :- AlterKeys]
+  (let [crd         (get-cardinality-keyword cardinality)
+        merge-keys  #(merge-with concat keys-map {:queries %})
+        one-side-q  {:ent   (drill-out-name-for-clojure entity)
+                     :prop  (drill-out-name-for-clojure (:name property))
+                     :f-tbl (build-db-table-name (crd cardinality) args)
+                     :f-id  "id" :sign "="
+                     :s-id  (drill-out-name-for-db (:name property))
+                     :t-tbl (build-db-table-name entity args)
+                     :t-id  "id"}
+        many-side-q {:ent   (drill-out-name-for-clojure (crd cardinality))
+                     :prop  (drill-out-name-for-clojure (:back-property
+                                                         cardinality))
+                     :f-tbl (build-db-table-name entity args)
+                     :f-id  (drill-out-name-for-db (:name property)) :sign "="
+                     :s-id  "id"
+                     :t-tbl (build-db-table-name (crd cardinality) args)
+                     :t-id  "id"}]
+    (case crd
+      :one-to-many (merge-keys [one-side-q many-side-q])
+      :many-to-one (merge-keys [many-side-q one-side-q]))))
+
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
     (let [reverse-crd #(let [crd (first %)]
@@ -202,8 +231,7 @@
     (let [params [inferred-card entity property args]]
       (->> (apply make-create-tbl-keys (conj params {}))
            (conj params) (apply make-alter-tbl-keys)
-           ;; (apply make-queries-keys)
-           ))))
+           (conj params) (apply make-queries-keys)))))
 
 (defn- form-already-made-item [inferred-cardinality entity property]
   (let [crd (get-cardinality-keyword inferred-cardinality)]
