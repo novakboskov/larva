@@ -8,6 +8,8 @@
              [program-api-schemes :as sch :refer [APIProperties]]
              [utils :as utils]]
             [larva.db
+             [commons :refer :all]
+             [queries :refer [queries]]
              [stuff :refer [database-grammar]]
              [utils :refer :all]]
             [schema.core :as s]))
@@ -37,19 +39,6 @@
   {(s/optional-key :create-tables) [CreateTableMap]
    (s/optional-key :alter-tables)  [AlterMap]
    (s/optional-key :queries)       [QueryMap]})
-
-(defn- make-id-column-name [entity & recursive]
-  (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
-
-(defn- get-cardinality-keyword
-  "Works only for those cardinalities which are originated from property
-  that represents reference."
-  [cardinality]
-  (cond (or (nil? cardinality) (= {} cardinality)) :simple-collection
-        (contains? cardinality :many-to-many)      :many-to-many
-        (contains? cardinality :one-to-one)        :one-to-one
-        (contains? cardinality :many-to-one)       :many-to-one
-        (contains? cardinality :one-to-many)       :one-to-many))
 
 (defn- infer-property-data-type
   "Returns a vector consisted of string to be placed as data type of table column
@@ -122,31 +111,6 @@
             (get-in property [:type :coll])])))
       (recursive-columns))))
 
-(defn- build-additional-tbl-name
-  "Building name of an additional table which is relation by-product."
-  [inferred-card entity property args]
-  (let [crd       (get-cardinality-keyword inferred-card)
-        recursive (contains? inferred-card :recursive)
-        not-recursive-table-name-base
-        #(str (build-db-table-name entity args) "__"
-              (drill-out-name-for-db (:name property)) "__"
-              (build-db-table-name (%1 inferred-card) args) "__"
-              (drill-out-name-for-db (:back-property inferred-card)) %2)
-        recursive-table-name-base
-        #(str (build-db-table-name entity) "__"
-              (drill-out-name-for-db (:back-property inferred-card)) %)]
-    (if (not recursive)
-      (case crd
-        :many-to-many (not-recursive-table-name-base :many-to-many "__mtm")
-        :one-to-one   (not-recursive-table-name-base :one-to-one "__oto")
-        :simple-collection
-        (str (build-db-table-name entity) "__"
-             (drill-out-name-for-db (:name property))
-             "__smpl_coll"))
-      (case crd
-        :one-to-one   (recursive-table-name-base "__r_oto")
-        :many-to-many (recursive-table-name-base "__r_mtm")))))
-
 (s/defn ^:always-validate make-create-tbl-keys :- TableKeys
   "Make templates keys originated from one-to-one, many-to-many, one-to-many
    (when model expresses a simple collection) and recursive relations between
@@ -191,76 +155,25 @@
                      :to-table this-tbl})))
     keys-map))
 
-(defn- queries
-  [cardinality entity property args crd recursive]
-  {:one-side-select-q
-   #(identity {:ent   (drill-out-name-for-clojure entity)
-               :prop  (drill-out-name-for-clojure (:name property))
-               :f-tbl (build-db-table-name (crd cardinality) args)
-               :f-id  "id" :sign "="
-               :s-id  (drill-out-name-for-db (:name property))
-               :t-tbl (build-db-table-name entity args)
-               :t-id  "id"})
-   :many-side-select-q
-   #(identity {:ent     (drill-out-name-for-clojure (crd cardinality))
-               :prop    (drill-out-name-for-clojure (:back-property
-                                                     cardinality))
-               :f-tbl   (build-db-table-name entity args)
-               :f-id    (drill-out-name-for-db (:name property)) :sign "="
-               :no-nest true})
-   :oto&mtm-select-qs
-   #(identity [{:ent   (drill-out-name-for-clojure entity)
-                :prop  (drill-out-name-for-clojure (:name property))
-                :f-tbl (build-db-table-name (crd cardinality) args)
-                :f-id  "id" :sign "IN"
-                :s-id  (make-id-column-name (crd cardinality))
-                :t-tbl (build-additional-tbl-name
-                        cardinality entity property args)
-                :t-id  (make-id-column-name entity)}
-               {:ent   (drill-out-name-for-clojure (crd cardinality))
-                :prop  (drill-out-name-for-clojure (:back-property
-                                                    cardinality))
-                :f-tbl (build-db-table-name entity)
-                :f-id  "id" :sign "IN"
-                :s-id  (make-id-column-name entity)
-                :t-tbl (build-additional-tbl-name
-                        cardinality entity property args)
-                :t-id  (make-id-column-name (crd cardinality))}])
-   :simpl-coll-select-q
-   #(identity {:ent     (drill-out-name-for-clojure entity)
-               :prop    (drill-out-name-for-clojure (:name property))
-               :f-tbl   (build-additional-tbl-name
-                         cardinality entity property args)
-               :f-id    (make-id-column-name entity) :sign "="
-               :no-nest true})
-   :recursive_select-q
-   #(identity {:ent   (drill-out-name-for-clojure entity)
-               :prop  (drill-out-name-for-clojure (:name property))
-               :f-tbl (build-db-table-name entity args)
-               :f-id  "id" :sign (if % "IN" "=")
-               :s-id  (make-id-column-name (:name property))
-               :t-tbl (build-additional-tbl-name
-                       cardinality entity property args)
-               :t-id  (make-id-column-name (:name property) true)})})
-
 (s/defn ^:always-validate make-queries-keys :- QueryKeys
   [cardinality entity property args keys-map :- AlterKeys]
   (let [crd        (get-cardinality-keyword cardinality)
         recursive  (contains? cardinality :recursive)
         merge-keys #(merge-with concat keys-map {:queries %})
-        qs         (queries cardinality entity property args crd recursive)]
+        q-sel      (:select
+                    (queries cardinality entity property args crd recursive))]
     (if (not recursive)
       (case crd
-        :one-to-many  (merge-keys [((:one-side-select-q qs))
-                                   ((:many-side-select-q qs))])
-        :many-to-one  (merge-keys [((:many-side-select-q qs))
-                                   ((:one-side-select-q qs))])
-        :many-to-many (merge-keys ((:oto&mtm-select-qs qs)))
-        :one-to-one   (merge-keys ((:oto&mtm-select-qs qs)))
-        :simple-collection (merge-keys [((:simpl-coll-select-q qs))]))
+        :one-to-many       (merge-keys [((:one-side-select-q q-sel))
+                                        ((:many-side-select-q q-sel))])
+        :many-to-one       (merge-keys [((:many-side-select-q q-sel))
+                                        ((:one-side-select-q q-sel))])
+        :many-to-many      (merge-keys ((:oto&mtm-select-qs q-sel)))
+        :one-to-one        (merge-keys ((:oto&mtm-select-qs q-sel)))
+        :simple-collection (merge-keys [((:simpl-coll-select-q q-sel))]))
       (case crd
-        :one-to-one   (merge-keys [((:recursive_select-q qs) false)])
-        :many-to-many (merge-keys [((:recursive_select-q qs) "IN")])))))
+        :one-to-one   (merge-keys [((:recursive_select-q q-sel) false)])
+        :many-to-many (merge-keys [((:recursive_select-q q-sel) "IN")])))))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
@@ -269,8 +182,8 @@
                            :one-to-many :many-to-one
                            :many-to-one :one-to-many
                            crd))]
-      (some #(= (made-item [(reverse-crd %) {:src  (:dest (second %))
-                                             :dest (:src (second %))}]))
+      (some #(= made-item [(reverse-crd %) {:src  (:dest (second %))
+                                            :dest (:src (second %))}])
             (filter #(not (= :simple-collection (first %))) made)))))
 
 (defn- make-keys
@@ -295,7 +208,7 @@
     (if (not-empty er)
       (let [[entity properties] (first (first er))
             [made-untll-now t-keys]
-            (loop [props properties made [] t-keys []]
+            (loop [props properties made [] t-keys {}]
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card

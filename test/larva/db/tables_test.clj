@@ -3,7 +3,7 @@
             [larva
              [program-api :as api]
              [program-api-test :refer [eval-in-program-model-context]]
-             [test-data :refer [custom-property-datatype]]]
+             [test-data :refer :all]]
             [larva.code-gen.common :as common]
             [larva.db
              [tables :as tbl]
@@ -172,24 +172,24 @@
         (is (= {} (tbl/make-alter-tbl-keys crd1 entity0 p1 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
-        (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {})))
+        (is (= {} (tbl/make-alter-tbl-keys crd6 entity1 p6 nil {})))
         ;; make-queries-keys test
-        (is (= "--name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n--name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
+        (is (= "-- name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
-        (is (= "--name: get-musician-instruments<!\n-- returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n--name: get-instrument-players<!\n-- returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
+        (is (= "-- name: get-musician-instruments<!\n-- returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- name: get-instrument-players<!\n-- returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
-        (is (= "--name: get-musician-disrespected-by<!\n-- returns disrespected-by associated with musician\nSELECT * FROM Mentors WHERE id IN (SELECT mentor_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE musician_id = :musician)\n\n--name: get-mentor-disrespect<!\n-- returns disrespect associated with mentor\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE mentor_id = :mentor)\n\n\n"
+        (is (= "-- name: get-musician-disrespected-by<!\n-- returns disrespected-by associated with musician\nSELECT * FROM Mentors WHERE id IN (SELECT mentor_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE musician_id = :musician)\n\n-- name: get-mentor-disrespect<!\n-- returns disrespect associated with mentor\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE mentor_id = :mentor)\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd9 entity0 p9 nil {}))))
-        (is (= "--name: get-musician-guru<!\n-- returns guru associated with musician\nSELECT * FROM Musicians WHERE id = (SELECT guru_id FROM Musicians__guru__r_oto WHERE guru_id_r = :musician)\n\n\n"
+        (is (= "-- name: get-musician-guru<!\n-- returns guru associated with musician\nSELECT * FROM Musicians WHERE id = (SELECT guru_id FROM Musicians__guru__r_oto WHERE guru_id_r = :musician)\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd5 entity0 p5 nil {}))))
-        (is (= "--name: get-musician-influenced<!\n-- returns influenced associated with musician\nSELECT * FROM Musicians WHERE id IN (SELECT influenced_id FROM Musicians__influenced__r_mtm WHERE influenced_id_r = :musician)\n\n\n"
+        (is (= "-- name: get-musician-influenced<!\n-- returns influenced associated with musician\nSELECT * FROM Musicians WHERE id IN (SELECT influenced_id FROM Musicians__influenced__r_mtm WHERE influenced_id_r = :musician)\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd6 entity0 p6 nil {}))))
-        (is (= "--name: get-musician-honors<!\n-- returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
+        (is (= "-- name: get-musician-honors<!\n-- returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
                (common/render-template
                 (slurp templ) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
        (eval-in-environment
@@ -233,11 +233,11 @@
 ;; (deftest build-additional-templates-keys-test
 ;;   (testing "Returned keys intended to fulfill create table template."
 ;;     (eval-in-program-model-context
-;;      custom-property-datatype
+;;      entity-have-no-properties
 ;;      (let [ents      (api/all-entities)
 ;;            db-t      :postgres
 ;;            ent-props (map #(second
 ;;                             (tbl/build-db-create-table-string %1 %2 db-t false
 ;;                                                               nil))
 ;;                           ents (map #(api/entity-properties %) ents))]
-;;        (is (= ent-props (tbl/build-additional-templates-keys ent-props db-t nil)))))))
+;;        (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))))
