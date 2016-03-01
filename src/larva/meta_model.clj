@@ -63,10 +63,13 @@
 (s/def DBTypes
   (s/enum :postgres :mysql :h2 :sqlite :mongodb))
 
+(s/def SQLTools
+  (s/enum :hugsql :yesql))
+
 (s/def Meta
   "Schema for meta section of program."
   {(s/optional-key :api-only) s/Bool
-   (s/optional-key :db)       DBTypes})
+   (s/optional-key :db)       {:type DBTypes (s/optional-key :sql) SQLTools}})
 
 (s/def About
   "Schema for about section of program."

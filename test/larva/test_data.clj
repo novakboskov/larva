@@ -219,7 +219,7 @@
     :comment "This is just in the sake of a proof of concept."}
    :meta
    {:api-only false
-    :db       :postgres}
+    :db       {:type :postgres :sql :yesql}}
    :entities
    [{:signature  "Musician"
      :properties [{:name "name" :type :str :gui-label "Name"}
@@ -347,7 +347,7 @@
     :comment "This is just in the sake of a proof of concept."}
    :meta
    {:api-only false
-    :db       :postgres}
+    :db       {:type :postgres :sql :hugsql}}
    :entities
    [{:signature  "Musician"
      :properties [{:name "name" :type :str :gui-label "Name"}

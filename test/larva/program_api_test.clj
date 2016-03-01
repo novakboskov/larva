@@ -88,9 +88,9 @@
   (testing "Returned meta data from program."
     (eval-in-program-model-context
      standard-program-with-meta
-     (is (= {:api-only true :db :postgres}
+     (is (= {:api-only true :db {:type :postgres :sql :yesql}}
             (api/program-meta))))
-    (is (= {:api-only true :db :postgres}
+    (is (= {:api-only true :db {:type :postgres :sql :yesql}}
            (api/program-meta {:model standard-program-with-meta})))
     (is (= {} (api/program-meta {:model no-entities-no-about-edge-case})))
     (eval-in-program-model-context

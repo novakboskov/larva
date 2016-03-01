@@ -20,7 +20,8 @@
   otherwise type of used database will be inferred from database drivers provided
   in project.clj."
   [& args]
-  (or (:db (if args (apply api/program-meta args) (api/program-meta)))
+  (or (get-in (if args (apply api/program-meta args) (api/program-meta))
+              [:db :type])
       (let [deps     (map #(str (first %)) (:dependencies
                                             (utils/make-project-clj-map)))
             matcher  #(re-matches (re-pattern (str "^.*" %1 ".*$")) %2)
@@ -155,7 +156,7 @@
   (let [to-capt (cond singular (drill-out-name-for-db entity-signature)
                       model-source
                       (build-plural-for-entity entity-signature model-source)
-                      :else (build-plural-for-entity entity-signature))]
+                      :else    (build-plural-for-entity entity-signature))]
     (cs/capitalize to-capt)))
 
 (defn build-foreign-key-name [p-key-tbl f-key-tbl prop-name]
