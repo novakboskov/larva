@@ -7,7 +7,8 @@
             [larva.code-gen.common :as common]
             [larva.db
              [tables :as tbl]
-             [utils-test :refer [eval-in-environment platform-agnostic]]]))
+             [utils-test :refer [eval-in-environment platform-agnostic]]]
+            [larva.frameworks.luminus.stuff :as stuff]))
 
 (deftest build-db-create-table-string-test
   (testing "Create table string and properties with references returning."
@@ -138,7 +139,11 @@
            crd7    (api/property-reference entity2 p7)
            crd8    (api/property-reference entity1 p8)
            crd9    (api/property-reference entity0 p9)
-           templ   "resources/templates/frameworks/luminus/larva-specific/db/sql/add-queries.sql"]
+           templates
+           "resources/templates/"
+           templ-yesql
+           (str templates (second ((:additional-queries
+                                    (stuff/relational-db-files)) :yesql)))]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -176,22 +181,22 @@
         ;; make-queries-keys test
         (is (= "-- name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
         (is (= "-- name: get-musician-instruments<!\n-- returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- name: get-instrument-players<!\n-- returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
         (is (= "-- name: get-musician-disrespected-by<!\n-- returns disrespected-by associated with musician\nSELECT * FROM Mentors WHERE id IN (SELECT mentor_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE musician_id = :musician)\n\n-- name: get-mentor-disrespect<!\n-- returns disrespect associated with mentor\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE mentor_id = :mentor)\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd9 entity0 p9 nil {}))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd9 entity0 p9 nil {}))))
         (is (= "-- name: get-musician-guru<!\n-- returns guru associated with musician\nSELECT * FROM Musicians WHERE id = (SELECT guru_id FROM Musicians__guru__r_oto WHERE guru_id_r = :musician)\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd5 entity0 p5 nil {}))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd5 entity0 p5 nil {}))))
         (is (= "-- name: get-musician-influenced<!\n-- returns influenced associated with musician\nSELECT * FROM Musicians WHERE id IN (SELECT influenced_id FROM Musicians__influenced__r_mtm WHERE influenced_id_r = :musician)\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd6 entity0 p6 nil {}))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd6 entity0 p6 nil {}))))
         (is (= "-- name: get-musician-honors<!\n-- returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
                (common/render-template
-                (slurp templ) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
+                (slurp templ-yesql) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
        (eval-in-environment
         :mysql
         (is (= {} (tbl/make-create-tbl-keys crd2 entity1 p2 nil {})))

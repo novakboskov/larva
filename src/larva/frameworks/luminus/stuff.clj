@@ -44,16 +44,20 @@
      :yesql "db/sql/queries_yesql.sql"
      "db/sql/queries_hugsql.sql") ])
 
+(defn- relational-db-add-queries [key]
+  ["resources/sql/{{mtm-table-name}}_queries.sql"
+   (case key
+     :yesql "/db/sql/add-queries_yesql.sql"
+     "/db/sql/add-queries_hugsql.sql")])
+
 (defn relational-db-files []
   (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
                            (java.util.Date.))]
-    {:core           ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
-     :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries        (partial relational-db-queries)
-     :additional-queries
-     ["resources/sql/{{mtm-table-name}}_queries.sql"
-      "frameworks/luminus/larva-specific/db/sql/add-queries.sql"]
-     :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
+    {:core               ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
+     :migrations-clj     ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
+     :queries            (partial relational-db-queries)
+     :additional-queries (partial relational-db-add-queries)
+     :core-test          ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.up.sql")
       "/db/migrations/add-entity-table.up.sql"]
