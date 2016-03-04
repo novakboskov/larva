@@ -7,23 +7,30 @@
             [larva.program-api :as api]
             [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]))
 
+(def default-sql-tool :hugsql)
+
 (defn- build-api-args-map
   [{:keys [model-path model]}]
   (cond model-path {:model-path model-path}
         model      {:model model}
         :else      nil))
 
+(defn- build-sql-tool [args]
+  (or
+   (get-in (if args (api/program-meta args) (api/program-meta)) [:db :type])
+   default-sql-tool))
+
 (defn- add-additional
-  [references templates options]
-  (let [render-options (:render-options templates) force (:force options)
-        args           (build-api-args-map options)
+  [args references templates db-type force options sql-tool]
+  (let [render-options (:render-options templates)
+        force          (:force options)
         ;; db-options
         ;; {:alter-tables (tbl/build-alter-tables-strings references)}
         ]
     ;; TODO:
-    (doseq [k (tbl/build-additional-templates-keys references args options)]
+    (doseq [ks (tbl/build-additional-templates-keys references args)]
       (render-assets [:additional-migrations-sql-up templates]
-                     (merge k render-options)))
+                     (merge ks render-options)))
     ;; (render-assets [(:additional-migrations-sql-up templates)
     ;;                 (:migtrations-alter-up templates)
     ;;                 (:additional-queries templates)
@@ -34,6 +41,7 @@
 (defn add-database-layer
   [options]
   (let [args      (build-api-args-map options)
+        sql-tool  (build-sql-tool args)
         force     (:force options)
         entities  (if args (api/all-entities args) (api/all-entities))
         db-type   (if args (db/infer-db-type args) (db/infer-db-type))
@@ -54,11 +62,11 @@
                :set-properties     (db/build-sequence-string props db-type :set)
                :props-create-table props-create-table}]
           (render-assets [(:migrations-sql-up templates)
-                          (:queries templates)
+                          ((:queries templates) sql-tool)
                           (:migrations-sql-down templates)]
                          (merge db-options (:render-options options)))
           (recur (rest ents) (conj references refs)))
-        (add-additional references templates db-type force options)))))
+        (add-additional args references templates db-type force options sql-tool)))))
 
 ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
 ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace

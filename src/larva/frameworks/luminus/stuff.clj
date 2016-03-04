@@ -38,29 +38,34 @@
    ;; tests
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
+(defn- relational-db-queries [key]
+  ["resources/sql/{{entity-plural}}_queries.sql"
+   (case key
+     :yesql "db/sql/queries_yesql.sql"
+     "db/sql/queries_hugsql.sql") ])
+
 (defn relational-db-files []
   (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
                            (java.util.Date.))]
     {:core           ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
      :migrations-clj ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries        ["resources/sql/{{entity-plural}}_queries.sql"
-                      "frameworks/luminus/larva-specific/db/sql/queries.sql"]
+     :queries        (partial relational-db-queries)
      :additional-queries
      ["resources/sql/{{mtm-table-name}}_queries.sql"
       "frameworks/luminus/larva-specific/db/sql/add-queries.sql"]
      :core-test      ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.up.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-entity-table.up.sql"]
+      "/db/migrations/add-entity-table.up.sql"]
      :migtrations-alter-up
      [(str "resources/migrations/" timestamp "-alter-{{entity-plural}}-table.up.sql")
-      "frameworks/luminus/larva-specific/db/migrations/alter-entity-table.up.sql"]
+      "db/migrations/alter-entity-table.up.sql"]
      :migrations-sql-down
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.down.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-entity-table.down.sql"]
+      "db/migrations/add-entity-table.down.sql"]
      :additional-migrations-sql-up
      [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.up.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-additional-entity-table.up.sql"]
+      "db/migrations/add-additional-entity-table.up.sql"]
      :additional-migrations-sql-down
      [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.down.sql")
-      "frameworks/luminus/larva-specific/db/migrations/add-additional-entity-table.down.sql"]}))
+      "db/migrations/add-additional-entity-table.down.sql"]}))
