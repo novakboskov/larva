@@ -2,7 +2,7 @@
   (:require [larva.db.utils :refer :all]
             [larva.db.commons :refer :all]))
 
-(defn- select-queries [cardinality entity property args crd recursive]
+(defn- get-queries [cardinality entity property args crd recursive]
   {:one-side-select-q
    #(identity {:ent   (drill-out-name-for-clojure entity)
                :prop  (drill-out-name-for-clojure (:name property))
@@ -55,4 +55,4 @@
 
 (defn queries
   [cardinality entity property args crd recursive]
-  {:select (select-queries cardinality entity property args crd recursive)})
+  {:get (get-queries cardinality entity property args crd recursive)})
