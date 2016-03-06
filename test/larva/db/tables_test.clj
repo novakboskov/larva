@@ -143,7 +143,10 @@
            "resources/templates/"
            templ-yesql
            (str templates (second ((:additional-queries
-                                    (stuff/relational-db-files)) :yesql)))]
+                                    (stuff/relational-db-files)) :yesql)))
+           templ-hugsql
+           (str templates (second ((:additional-queries
+                                    (stuff/relational-db-files)) :hugsql)))]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -181,7 +184,7 @@
         ;; make-queries-keys test
         (is (= "-- name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
+                (slurp templ-hugsql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
         (is (= "-- name: get-musician-instruments<!\n-- returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- name: get-instrument-players<!\n-- returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
                (common/render-template
                 (slurp templ-yesql) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
