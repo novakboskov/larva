@@ -11,7 +11,7 @@
             [larva.frameworks.luminus.stuff :as stuff]))
 
 (deftest build-db-create-table-string-test
-  (testing "Create table string and properties with references returning."
+  (testing "Create table string and returning properties with references."
     (eval-in-program-model-context
      custom-property-datatype
      (eval-in-environment
@@ -123,12 +123,13 @@
            p8      {:name      "members" :type {:coll :reference
                                                 :to   ["Musician"]}
                     :gui-label "Members"}
-           p9      {:name "disrespected by" :type {:one :reference
-                                                   :to  ["Mentor" "disrespect"]
-                                                   :gui :select-form}}
+           p9      {:name "disrespect" :type {:one :reference
+                                              :to  ["Musician"]
+                                              :gui :select-form}}
            entity0 "Musician"
            entity1 "Band"
            entity2 "SocialMediaProfile"
+           entity3 "Mentor"
            crd0    (api/property-reference entity0 p0)
            crd1    (api/property-reference entity0 p1)
            crd2    (api/property-reference entity1 p2)
@@ -138,7 +139,7 @@
            crd6    (api/property-reference entity1 p6)
            crd7    (api/property-reference entity2 p7)
            crd8    (api/property-reference entity1 p8)
-           crd9    (api/property-reference entity0 p9)
+           crd9    (api/property-reference entity3 p9)
            templates
            "resources/templates/"
            templ-yesql
@@ -163,6 +164,16 @@
                   :ad-props-create-table
                   " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
+        (is {:create-tables
+             [{:ad-entity-plural "Bands__influenced__r_mtm" ,
+               :ad-props-create-table
+               " id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id)"}]}
+            (= nil (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
+        (is (= {:create-tables
+                [{:ad-entity-plural "Musicians__guru__r_oto" ,
+                  :ad-props-create-table
+                  " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+               (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         ;; make-alter-tbl-keys test
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__band"
@@ -181,25 +192,35 @@
         (is (= {} (tbl/make-alter-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd6 entity1 p6 nil {})))
+
         ;; make-queries-keys test
-        (is (= "-- name: get-musician-band<!\n-- returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- name: get-band-members<!\n-- returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
+        ;; A Musician-Band one-to-many relationship, "one" side
+        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
-        (is (= "-- name: get-musician-instruments<!\n-- returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- name: get-instrument-players<!\n-- returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
+        ;; other side of the same relation
+        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
-        (is (= "-- name: get-musician-disrespected-by<!\n-- returns disrespected-by associated with musician\nSELECT * FROM Mentors WHERE id IN (SELECT mentor_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE musician_id = :musician)\n\n-- name: get-mentor-disrespect<!\n-- returns disrespect associated with mentor\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__disrespected_by__Mentors__disrespect__oto WHERE mentor_id = :mentor)\n\n\n"
+                (slurp templ-hugsql) (tbl/make-queries-keys crd8 entity1 p8 nil {}))))
+        ;; A Musician-Instrument many-to-many relationship
+        (is (= "-- :name get-musician-instruments :? :*\n-- :doc returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- :name get-instrument-players :? :*\n-- :doc returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd9 entity0 p9 nil {}))))
-        (is (= "-- name: get-musician-guru<!\n-- returns guru associated with musician\nSELECT * FROM Musicians WHERE id = (SELECT guru_id FROM Musicians__guru__r_oto WHERE guru_id_r = :musician)\n\n\n"
+                (slurp templ-hugsql) (tbl/make-queries-keys crd1 entity0 p1 nil {}))))
+        ;; A Musician-Mentor one-to-one relationship, Mentor's side
+        (is (= "-- :name get-mentor-disrespect :? :1\n-- :doc returns disrespect associated with mentor\nSELECT * FROM Musicians WHERE id = (SELECT musician_id FROM Mentors__disrespect__Musicians__disrespected_by__oto WHERE mentor_id = :mentor)\n\n-- :name get-musician-disrespected-by :? :1\n-- :doc returns disrespected-by associated with musician\nSELECT * FROM Mentors WHERE id = (SELECT mentor_id FROM Mentors__disrespect__Musicians__disrespected_by__oto WHERE musician_id = :musician)\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd5 entity0 p5 nil {}))))
-        (is (= "-- name: get-musician-influenced<!\n-- returns influenced associated with musician\nSELECT * FROM Musicians WHERE id IN (SELECT influenced_id FROM Musicians__influenced__r_mtm WHERE influenced_id_r = :musician)\n\n\n"
+                (slurp templ-hugsql) (tbl/make-queries-keys crd9 entity3 p9 nil {}))))
+        ;; A Musician one-to-one recursive relationship
+        (is (= "-- :name get-musician-guru :? :1\n-- :doc returns guru associated with musician\nSELECT * FROM Musicians WHERE id = (SELECT musician_id FROM Musicians__guru__r_oto WHERE musician_id_r = :musician)\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd6 entity0 p6 nil {}))))
-        (is (= "-- name: get-musician-honors<!\n-- returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
+                (slurp templ-hugsql) (tbl/make-queries-keys crd5 entity0 p5 nil {}))))
+        ;; A Band many-to-many recursive relationship
+        (is (= "-- :name get-band-influenced :? :*\n-- :doc returns influenced associated with band\nSELECT * FROM Bands WHERE id IN (SELECT band_id FROM Bands__influenced__r_mtm WHERE band_id_r = :band)\n\n\n"
                (common/render-template
-                (slurp templ-yesql) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
+                (slurp templ-hugsql) (tbl/make-queries-keys crd6 entity1 p6 nil {}))))
+        (is (= "-- :name get-musician-honors :? :*\n-- :doc returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
+               (common/render-template
+                (slurp templ-hugsql) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
        (eval-in-environment
         :mysql
         (is (= {} (tbl/make-create-tbl-keys crd2 entity1 p2 nil {})))

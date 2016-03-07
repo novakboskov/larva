@@ -39,6 +39,6 @@
   {(s/enum :one-to-many
            :many-to-one
            :one-to-one
-           :many-to-many) s/Str
-   (s/optional-key :recursive) s/Bool
+           :many-to-many)          s/Str
+   (s/optional-key :recursive)     s/Bool
    (s/optional-key :back-property) s/Str})

@@ -28,9 +28,10 @@
    :f-tbl                         s/Str  :f-id                      s/Str
    (s/optional-key :sign)         s/Str  (s/optional-key :update)   s/Bool
    (s/optional-key :no-nest)      s/Bool (s/optional-key :s-id)     s/Str
-   (s/optional-key :t-tbl)        s/Str  (s/optional-key :t-id)     s/Str
+   (s/optional-key :s-tbl)        s/Str  (s/optional-key :t-id)     s/Str
    (s/optional-key :assoc)        s/Bool (s/optional-key :dissoc)   s/Bool
-   (s/optional-key :update-where) s/Str  (s/optional-key :f-id-val) s/Str})
+   (s/optional-key :update-where) s/Str  (s/optional-key :f-id-val) s/Str
+   (s/optional-key :sel-multi)    s/Bool})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -173,24 +174,16 @@
         q-dissoc   (:dissoc queries)]
     (if (not recursive)
       (case crd
-        :one-to-many       (merge-keys (query-keys-for
-                                        :queries [q-get q-assoc]
-                                        :keys [:one-side-q :many-side-q]))
-        :many-to-one       (merge-keys (query-keys-for
-                                        :queries [q-get q-assoc]
-                                        :keys [:many-side-q :one-side-q]))
-        :many-to-many      (merge-keys (query-keys-for
-                                        :queries [q-get q-assoc]
-                                        :keys [:oto&mtm-qs]))
-        :one-to-one        (merge-keys (query-keys-for
-                                        :queries [q-get q-assoc]
-                                        :keys [:oto&mtm-qs]))
+        :one-to-many       (merge-keys ((:one-side-qs q-get)))
+        :many-to-one       (merge-keys ((:many-side-qs q-get)))
+        :many-to-many      (merge-keys ((:oto&mtm-qs q-get) :many-to-many))
+        :one-to-one        (merge-keys ((:oto&mtm-qs q-get) :one-to-one))
         :simple-collection (merge-keys (query-keys-for
-                                        :queries [q-get q-assoc]
+                                        :queries [q-get]
                                         :keys [:simpl-coll-q])))
       (case crd
-        :one-to-one   (merge-keys [((:recursive-q q-get) false)])
-        :many-to-many (merge-keys [((:recursive-q q-get) "IN")])))))
+        :one-to-one   (merge-keys [((:recursive-q q-get) :one-to-one)])
+        :many-to-many (merge-keys [((:recursive-q q-get) :many-to-many)])))))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
