@@ -195,7 +195,7 @@
 
         ;; make-queries-keys test
         ;; A Musician-Band one-to-many relationship, "one" side
-        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
+        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands\nWHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians\nWHERE band = :band\n\n-- :name assoc-musician-band! :!\n-- :doc associates musician with corresponding band\nUPDATE Musicians SET band = :band\nWHERE id = :musician\n\n-- :name assoc-band-members! :!\n-- :doc associates band with corresponding members\nUPDATE Musicians SET band = :band\nWHERE id IN :tuple:members\n\n-- :name dissoc-musician-band! :!\n-- :doc dissociates musician from corresponding band\nUPDATE Musicians\nSET band = NULL\nWHERE id = :musician\n\n-- :name dissoc-band-members! :!\n-- :doc dissociates band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE id IN :tuple:members\n\n-- :name dissoc-all-band-members! :!\n-- :doc dissociates all band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE band = :band\n"
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
         ;; other side of the same relation
@@ -218,6 +218,7 @@
         (is (= "-- :name get-band-influenced :? :*\n-- :doc returns influenced associated with band\nSELECT * FROM Bands WHERE id IN (SELECT band_id FROM Bands__influenced__r_mtm WHERE band_id_r = :band)\n\n\n"
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd6 entity1 p6 nil {}))))
+        ;; A simple collection relationship
         (is (= "-- :name get-musician-honors :? :*\n-- :doc returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))

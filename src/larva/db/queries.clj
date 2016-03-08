@@ -17,8 +17,8 @@
                 :prop    (drill-out-name-for-clojure (:back-property
                                                       cardinality))
                 :f-tbl   (build-db-table-name entity args)
-                :f-id    (drill-out-name-for-db (:name property)) :sign "="
-                :no-nest true :sel-multi true}])
+                :f-id    (drill-out-name-for-db (:name property)) :sign      "="
+                :no-nest true                                     :sel-multi true}])
    :many-side-qs
    #(identity [{:ent   (drill-out-name-for-clojure (crd cardinality))
                 :prop  (drill-out-name-for-clojure (:back-property
@@ -36,57 +36,67 @@
                                                cardinality))
                 :sign  "=" :no-nest true :sel-multi true}])
    :oto&mtm-qs
-   #(identity [{:ent   (drill-out-name-for-clojure entity)
-                :prop  (drill-out-name-for-clojure (:name property))
-                :f-tbl (build-db-table-name (crd cardinality) args)
-                :f-id  "id" :sign (if (= % :many-to-many) "IN" "=")
-                :s-id  (make-id-column-name (crd cardinality))
-                :s-tbl (build-additional-tbl-name
-                        cardinality entity property args)
-                :t-id  (make-id-column-name entity)
+   #(identity [{:ent       (drill-out-name-for-clojure entity)
+                :prop      (drill-out-name-for-clojure (:name property))
+                :f-tbl     (build-db-table-name (crd cardinality) args)
+                :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+                :s-id      (make-id-column-name (crd cardinality))
+                :s-tbl     (build-additional-tbl-name
+                            cardinality entity property args)
+                :t-id      (make-id-column-name entity)
                 :sel-multi (true? (= % :many-to-many))}
-               {:ent   (drill-out-name-for-clojure (crd cardinality))
-                :prop  (drill-out-name-for-clojure (:back-property
-                                                    cardinality))
-                :f-tbl (build-db-table-name entity)
-                :f-id  "id" :sign (if (= % :many-to-many) "IN" "=")
-                :s-id  (make-id-column-name entity)
-                :s-tbl (build-additional-tbl-name
-                        cardinality entity property args)
-                :t-id  (make-id-column-name (crd cardinality))
+               {:ent       (drill-out-name-for-clojure (crd cardinality))
+                :prop      (drill-out-name-for-clojure (:back-property
+                                                        cardinality))
+                :f-tbl     (build-db-table-name entity)
+                :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+                :s-id      (make-id-column-name entity)
+                :s-tbl     (build-additional-tbl-name
+                            cardinality entity property args)
+                :t-id      (make-id-column-name (crd cardinality))
                 :sel-multi (true? (= % :many-to-many))}])
    :simpl-coll-q
    #(identity {:ent     (drill-out-name-for-clojure entity)
                :prop    (drill-out-name-for-clojure (:name property))
                :f-tbl   (build-additional-tbl-name
                          cardinality entity property args)
-               :f-id    (make-id-column-name entity) :sign "="
-               :no-nest true :sel-multi true})
+               :f-id    (make-id-column-name entity) :sign      "="
+               :no-nest true                         :sel-multi true})
    :recursive-q
-   #(identity {:ent   (drill-out-name-for-clojure entity)
-               :prop  (drill-out-name-for-clojure (:name property))
-               :f-tbl (build-db-table-name entity args)
-               :f-id  "id" :sign (if (= % :many-to-many) "IN" "=")
-               :s-id  (make-id-column-name entity)
-               :s-tbl (build-additional-tbl-name
-                       cardinality entity property args)
-               :t-id  (make-id-column-name entity true)
+   #(identity {:ent       (drill-out-name-for-clojure entity)
+               :prop      (drill-out-name-for-clojure (:name property))
+               :f-tbl     (build-db-table-name entity args)
+               :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+               :s-id      (make-id-column-name entity)
+               :s-tbl     (build-additional-tbl-name
+                           cardinality entity property args)
+               :t-id      (make-id-column-name entity true)
                :sel-multi (true? (= % :many-to-many))})})
 
 (defn- assoc-queries [cardinality entity property args crd recursive]
   ;; TODO: Look what happens here and, build dissoc keys and so...
-  {:one-side-q
-   #(identity (let [ent  (drill-out-name-for-clojure entity)
-                    prop (drill-out-name-for-clojure (:name property))]
-                {:assoc        true :update true
-                 :ent          ent
-                 :prop         prop
-                 :f-tbl        (build-db-table-name entity args)
-                 :f-id         (drill-out-name-for-db (:name property))
-                 :f-id-val     prop
-                 :s-id         "id"
-                 :update-where (str "= :" ent)}))
-   :many-side-q
+  {:one-side-qs
+   #(identity [(let [ent  (drill-out-name-for-clojure entity)
+                     prop (drill-out-name-for-clojure (:name property))]
+                 {:assoc        true :update true
+                  :ent          ent
+                  :prop         prop
+                  :f-tbl        (build-db-table-name entity args)
+                  :f-id         (drill-out-name-for-db (:name property))
+                  :f-id-val     prop
+                  :s-id         "id"
+                  :update-where (str "= :" ent)})
+               (let [prop (drill-out-name-for-clojure
+                           (:back-property cardinality))]
+                 {:assoc        true :update true
+                  :ent          (drill-out-name-for-clojure (crd cardinality))
+                  :prop         prop
+                  :f-tbl        (build-db-table-name entity args)
+                  :f-id         (drill-out-name-for-db (:name property))
+                  :f-id-val     (drill-out-name-for-clojure (:name property))
+                  :s-id         "id"
+                  :update-where (str "IN :tuple:" prop)})])
+   :many-side-qs
    #(identity (let [ent (drill-out-name-for-clojure (crd cardinality))]
                 {:assoc        true :update true
                  :ent          ent
@@ -98,13 +108,26 @@
                  :f-id-val     (drill-out-name-for-db (:back-property
                                                        cardinality))
                  :s-id         "id"
-                 :update-where (str "= :tuple*:"
+                 :update-where (str "= :tuple:"
                                     (drill-out-name-for-clojure (:name property)))}))
    :oto&mtm-qs   ""
    :simpl-coll-q ""
    :recursive-q  ""})
 
+(defn- dissoc-queries
+  [& [cardinality entity property args crd recursive :as p]]
+  {:one-side-qs
+   (let [qs ((:one-side-qs (apply assoc-queries p)))]
+     (concat (mapv #(assoc (dissoc % :assoc :f-id-val) :dissoc true) qs)
+             [(-> (second qs)
+                  (dissoc :assoc :f-id-val :s-id :update-where)
+                  (assoc :dissoc-all true
+                         :s-id (drill-out-name-for-db (:name property))
+                         :update-where (str "= :" (:prop (first qs)))))]))
+   :many-side-qs ""})
+
 (defn queries
   [cardinality entity property args crd recursive]
-  {:get   (get-queries cardinality entity property args crd recursive)
-   :assoc (assoc-queries cardinality entity property args crd recursive)})
+  {:get    (get-queries cardinality entity property args crd recursive)
+   :assoc  (assoc-queries cardinality entity property args crd recursive)
+   :dissoc (dissoc-queries cardinality entity property args crd recursive)})
