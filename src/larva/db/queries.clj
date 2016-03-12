@@ -17,8 +17,9 @@
                 :prop    (drill-out-name-for-clojure (:back-property
                                                       cardinality))
                 :f-tbl   (build-db-table-name entity args)
-                :f-id    (drill-out-name-for-db (:name property)) :sign      "="
-                :no-nest true                                     :sel-multi true}])
+                :f-id    (drill-out-name-for-db (:name property))
+                :sign    "="
+                :no-nest true :sel-multi true}])
    :many-side-qs
    #(identity [{:ent   (drill-out-name-for-clojure (crd cardinality))
                 :prop  (drill-out-name-for-clojure (:back-property
@@ -74,7 +75,6 @@
                :sel-multi (true? (= % :many-to-many))})})
 
 (defn- assoc-queries [cardinality entity property args crd recursive]
-  ;; TODO: Look what happens here and, build dissoc keys and so...
   {:one-side-qs
    #(identity [(let [ent  (drill-out-name-for-clojure entity)
                      prop (drill-out-name-for-clojure (:name property))]
@@ -97,34 +97,53 @@
                   :s-id         "id"
                   :update-where (str "IN :tuple:" prop)})])
    :many-side-qs
-   #(identity (let [ent (drill-out-name-for-clojure (crd cardinality))]
-                {:assoc        true :update true
-                 :ent          ent
-                 :prop         (drill-out-name-for-clojure (:back-property
-                                                            cardinality))
-                 :f-tbl        (build-db-table-name entity args)
-                 :f-id         (drill-out-name-for-db (:back-property
-                                                       cardinality))
-                 :f-id-val     (drill-out-name-for-db (:back-property
-                                                       cardinality))
-                 :s-id         "id"
-                 :update-where (str "= :tuple:"
-                                    (drill-out-name-for-clojure (:name property)))}))
+   #(identity [(let [ent (drill-out-name-for-clojure (crd cardinality))]
+                 {:assoc        true :update true
+                  :ent          ent
+                  :prop         (drill-out-name-for-clojure (:back-property
+                                                             cardinality))
+                  :f-tbl        (build-db-table-name (crd cardinality) args)
+                  :f-id         (drill-out-name-for-db (:back-property
+                                                        cardinality))
+                  :f-id-val     (drill-out-name-for-db (:back-property
+                                                        cardinality))
+                  :s-id         "id"
+                  :update-where (str "= :" ent)})
+               (let [prop (drill-out-name-for-clojure (:name property))]
+                 {:assoc        true :update true
+                  :ent          (drill-out-name-for-clojure entity)
+                  :prop         prop
+                  :f-tbl        (build-db-table-name (crd cardinality) args)
+                  :f-id         (drill-out-name-for-db (:back-property
+                                                        cardinality))
+                  :f-id-val     (drill-out-name-for-db (:back-property
+                                                        cardinality))
+                  :s-id         "id"
+                  :update-where (str "IN :tuple:" prop)})])
    :oto&mtm-qs   ""
    :simpl-coll-q ""
    :recursive-q  ""})
 
+(defn assoc->dissoc-queries
+  [side params]
+  (fn []
+    (let [s         (case side :one-side :one-side-qs
+                          :many-side-qs)
+          qs        ((s (apply assoc-queries params)))
+          update-id (:prop (first qs))]
+      (concat (mapv #(assoc (dissoc % :assoc :f-id-val) :dissoc true) qs)
+              [(-> (second qs)
+                   (dissoc :assoc :f-id-val :s-id :update-where)
+                   (assoc :dissoc-all true
+                          :s-id update-id
+                          :update-where (str "= :" update-id)))]))))
+
 (defn- dissoc-queries
   [& [cardinality entity property args crd recursive :as p]]
-  {:one-side-qs
-   (let [qs ((:one-side-qs (apply assoc-queries p)))]
-     (concat (mapv #(assoc (dissoc % :assoc :f-id-val) :dissoc true) qs)
-             [(-> (second qs)
-                  (dissoc :assoc :f-id-val :s-id :update-where)
-                  (assoc :dissoc-all true
-                         :s-id (drill-out-name-for-db (:name property))
-                         :update-where (str "= :" (:prop (first qs)))))]))
-   :many-side-qs ""})
+  {:one-side-qs  (assoc->dissoc-queries :one-side p)
+   :many-side-qs (assoc->dissoc-queries :many-side p)
+   :simpl-coll-q ""
+   :recursive-q  ""})
 
 (defn queries
   [cardinality entity property args crd recursive]

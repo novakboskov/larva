@@ -195,13 +195,15 @@
 
         ;; make-queries-keys test
         ;; A Musician-Band one-to-many relationship, "one" side
-        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands\nWHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians\nWHERE band = :band\n\n-- :name assoc-musician-band! :!\n-- :doc associates musician with corresponding band\nUPDATE Musicians SET band = :band\nWHERE id = :musician\n\n-- :name assoc-band-members! :!\n-- :doc associates band with corresponding members\nUPDATE Musicians SET band = :band\nWHERE id IN :tuple:members\n\n-- :name dissoc-musician-band! :!\n-- :doc dissociates musician from corresponding band\nUPDATE Musicians\nSET band = NULL\nWHERE id = :musician\n\n-- :name dissoc-band-members! :!\n-- :doc dissociates band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE id IN :tuple:members\n\n-- :name dissoc-all-band-members! :!\n-- :doc dissociates all band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE band = :band\n"
+        (let [queries
+              "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands\nWHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians\nWHERE band = :band\n\n-- :name assoc-musician-band! :!\n-- :doc associates musician with corresponding band\nUPDATE Musicians SET band = :band\nWHERE id = :musician\n\n-- :name assoc-band-members! :!\n-- :doc associates band with corresponding members\nUPDATE Musicians SET band = :band\nWHERE id IN :tuple:members\n\n-- :name dissoc-musician-band! :!\n-- :doc dissociates musician from corresponding band\nUPDATE Musicians\nSET band = NULL\nWHERE id = :musician\n\n-- :name dissoc-band-members! :!\n-- :doc dissociates band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE id IN :tuple:members\n\n-- :name dissoc-all-band-members! :!\n-- :doc dissociates all band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE band = :band\n"]
+          (is (= queries
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
-        ;; other side of the same relation
-        (is (= "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands WHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians WHERE band = :band\n\n\n"
-               (common/render-template
-                (slurp templ-hugsql) (tbl/make-queries-keys crd8 entity1 p8 nil {}))))
+          ;; other side of the same relation
+          (is (= queries
+                 (common/render-template
+                  (slurp templ-hugsql) (tbl/make-queries-keys crd8 entity1 p8 nil {})))))
         ;; A Musician-Instrument many-to-many relationship
         (is (= "-- :name get-musician-instruments :? :*\n-- :doc returns instruments associated with musician\nSELECT * FROM Instruments WHERE id IN (SELECT instrument_id FROM Musicians__instruments__Instruments__players__mtm WHERE musician_id = :musician)\n\n-- :name get-instrument-players :? :*\n-- :doc returns players associated with instrument\nSELECT * FROM Musicians WHERE id IN (SELECT musician_id FROM Musicians__instruments__Instruments__players__mtm WHERE instrument_id = :instrument)\n\n\n"
                (common/render-template

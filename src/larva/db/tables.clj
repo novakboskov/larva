@@ -173,8 +173,10 @@
       (case crd
         :one-to-many       (merge-keys (concat ((:one-side-qs q-get))
                                                ((:one-side-qs q-assoc))
-                                               (:one-side-qs q-dissoc)))
-        :many-to-one       (merge-keys ((:many-side-qs q-get)))
+                                               ((:one-side-qs q-dissoc))))
+        :many-to-one       (merge-keys (concat ((:many-side-qs q-get))
+                                               ((:many-side-qs q-assoc))
+                                               ((:many-side-qs q-dissoc))))
         :many-to-many      (merge-keys ((:oto&mtm-qs q-get) :many-to-many))
         :one-to-one        (merge-keys ((:oto&mtm-qs q-get) :one-to-one))
         :simple-collection (merge-keys [((:simpl-coll-q q-get))]))
