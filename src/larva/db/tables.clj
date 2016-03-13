@@ -24,14 +24,15 @@
   {:table s/Str :fk-name s/Str :on s/Str :to-table s/Str})
 
 (s/def QueryMap
-  {:ent                           s/Str  :prop                        s/Str
-   :f-tbl                         s/Str  :f-id                        s/Str
-   (s/optional-key :sign)         s/Str  (s/optional-key :update)     s/Bool
-   (s/optional-key :no-nest)      s/Bool (s/optional-key :s-id)       s/Str
-   (s/optional-key :s-tbl)        s/Str  (s/optional-key :t-id)       s/Str
-   (s/optional-key :assoc)        s/Bool (s/optional-key :dissoc)     s/Bool
-   (s/optional-key :update-where) s/Str  (s/optional-key :f-id-val)   s/Str
-   (s/optional-key :sel-multi)    s/Bool (s/optional-key :dissoc-all) s/Bool})
+  {:ent                            s/Str  :prop                        s/Str
+   :f-tbl                          s/Str  :f-id                        s/Str
+   (s/optional-key :sign)          s/Str  (s/optional-key :update)     s/Bool
+   (s/optional-key :no-nest)       s/Bool (s/optional-key :s-id)       s/Str
+   (s/optional-key :s-tbl)         s/Str  (s/optional-key :t-id)       s/Str
+   (s/optional-key :assoc)         s/Bool (s/optional-key :dissoc)     s/Bool
+   (s/optional-key :update-where)  s/Str  (s/optional-key :f-id-val)   s/Str
+   (s/optional-key :sel-multi)     s/Bool (s/optional-key :dissoc-all) s/Bool
+   (s/optional-key :insert-values) s/Str})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -177,7 +178,9 @@
         :many-to-one       (merge-keys (concat ((:many-side-qs q-get))
                                                ((:many-side-qs q-assoc))
                                                ((:many-side-qs q-dissoc))))
-        :many-to-many      (merge-keys ((:oto&mtm-qs q-get) :many-to-many))
+        :many-to-many      (merge-keys (concat
+                                        ((:oto&mtm-qs q-get) :many-to-many)
+                                        ((:oto&mtm-qs q-assoc))))
         :one-to-one        (merge-keys ((:oto&mtm-qs q-get) :one-to-one))
         :simple-collection (merge-keys [((:simpl-coll-q q-get))]))
       (case crd

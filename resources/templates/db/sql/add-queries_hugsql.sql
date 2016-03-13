@@ -6,7 +6,7 @@ WHERE <<r.f-id>> <<r.sign>> <% if r.no-nest %>:<<r.ent>><% else %>(SELECT <<r.s-
 <% endif %><% if r.assoc %>-- :name assoc-<<r.ent>>-<<r.prop>>! :!
 -- :doc associates <<r.ent>> with corresponding <<r.prop>>
 <% if r.update %>UPDATE <<r.f-tbl>> SET <<r.f-id>> = :<<r.f-id-val>>
-WHERE <<r.s-id>> <<r.update-where>><% else %>INSERT INTO <<r.f-tbl>> (<<r.f-id>>, <<r.s-id>>) VALUES :tuple:<<r.prop>><% endif %>
+WHERE <<r.s-id>> <<r.update-where>><% else %>INSERT INTO <<r.f-tbl>> (<<r.f-id>>, <<r.s-id>>) VALUES <<r.insert-values>><% endif %>
 
 <% endif %><% if r.dissoc %>-- :name dissoc-<<r.ent>>-<<r.prop>>! :!
 -- :doc dissociates <<r.ent>> from corresponding <<r.prop>>

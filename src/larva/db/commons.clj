@@ -4,6 +4,15 @@
 (defn make-id-column-name [entity & recursive]
   (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
 
+(defn make-hugsql-values-string [single multi]
+  (str (System/lineSeparator) "/*~" (System/lineSeparator)
+       (str "(let [single ((str \":\" " single ") params)]"
+            (System/lineSeparator)
+            "    (clojure.string/join" (System/lineSeparator)
+            "        \", \" (for [m ((str \":\" " multi ") params)]"
+            "\"(\" single \", \" m \")\")))")
+       "~*/"))
+
 (defn get-cardinality-keyword
   "Works only for those cardinalities which are originated from property
   that represents reference."
