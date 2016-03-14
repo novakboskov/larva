@@ -6,11 +6,12 @@
 
 (defn make-hugsql-values-string [single multi]
   (str (System/lineSeparator) "/*~" (System/lineSeparator)
-       (str "(let [single ((str \":\" " single ") params)]"
+       (str "(let [single (" single " params)]"
             (System/lineSeparator)
             "    (clojure.string/join" (System/lineSeparator)
-            "        \", \" (for [m ((str \":\" " multi ") params)]"
-            "\"(\" single \", \" m \")\")))")
+            "        \", \" (for [m (" multi " params)]"
+            "\"(\" single \", \" m \")\")))"
+            (System/lineSeparator))
        "~*/"))
 
 (defn get-cardinality-keyword

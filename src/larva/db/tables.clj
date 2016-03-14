@@ -180,7 +180,8 @@
                                                ((:many-side-qs q-dissoc))))
         :many-to-many      (merge-keys (concat
                                         ((:oto&mtm-qs q-get) :many-to-many)
-                                        ((:oto&mtm-qs q-assoc))))
+                                        ((:oto&mtm-qs q-assoc))
+                                        ((:oto&mtm-qs q-dissoc))))
         :one-to-one        (merge-keys ((:oto&mtm-qs q-get) :one-to-one))
         :simple-collection (merge-keys [((:simpl-coll-q q-get))]))
       (case crd
