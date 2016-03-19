@@ -32,7 +32,7 @@
    (s/optional-key :assoc)         s/Bool (s/optional-key :dissoc)     s/Bool
    (s/optional-key :update-where)  s/Str  (s/optional-key :f-id-val)   s/Str
    (s/optional-key :sel-multi)     s/Bool (s/optional-key :dissoc-all) s/Bool
-   (s/optional-key :insert-values) s/Str})
+   (s/optional-key :insert-values) s/Str  (s/optional-key :and-single) s/Bool})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -180,9 +180,12 @@
                                                ((:many-side-qs q-dissoc))))
         :many-to-many      (merge-keys (concat
                                         ((:oto&mtm-qs q-get) :many-to-many)
-                                        ((:oto&mtm-qs q-assoc))
-                                        ((:oto&mtm-qs q-dissoc))))
-        :one-to-one        (merge-keys ((:oto&mtm-qs q-get) :one-to-one))
+                                        ((:oto&mtm-qs q-assoc) :many-to-many)
+                                        (((:oto&mtm-qs q-dissoc) :many-to-many))))
+        :one-to-one        (merge-keys (concat
+                                        ((:oto&mtm-qs q-get) :one-to-one)
+                                        ((:oto&mtm-qs q-assoc) :one-to-one)
+                                        (((:oto&mtm-qs q-dissoc) :one-to-one))))
         :simple-collection (merge-keys [((:simpl-coll-q q-get))]))
       (case crd
         :one-to-one   (merge-keys [((:recursive-q q-get) :one-to-one)])

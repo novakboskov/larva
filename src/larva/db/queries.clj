@@ -121,55 +121,66 @@
                   :s-id         "id"
                   :update-where (str "IN :tuple:" prop)})])
    :oto&mtm-qs
-   #(identity [(let [ent  (drill-out-name-for-clojure entity)
-                     prop (drill-out-name-for-clojure (:name property))]
-                 {:assoc         true
-                  :ent           ent :prop prop
-                  :f-tbl         (build-additional-tbl-name
-                                  cardinality entity property args)
-                  :f-id          (make-id-column-name entity)
-                  :s-id          (make-id-column-name (crd cardinality))
-                  :insert-values (make-hugsql-values-string (str ":" ent)
-                                                            (str ":" prop))})
-               (let [ent  (drill-out-name-for-clojure (crd cardinality))
-                     prop (drill-out-name-for-clojure (:back-property
-                                                       cardinality))]
-                 {:assoc         true
-                  :ent           ent :prop prop
-                  :f-tbl         (build-additional-tbl-name
-                                  cardinality entity property args)
-                  :f-id          (make-id-column-name (crd cardinality))
-                  :s-id          (make-id-column-name entity)
-                  :insert-values (make-hugsql-values-string (str ":" ent)
-                                                            (str ":" prop))})])
+   #(identity (let [make-insert-values
+                    (fn [crd ent prop]
+                      (case crd
+                        :one-to-one (str "(:" ent ", :" prop ")")
+                        (make-hugsql-values-string (str ":" ent)
+                                                   (str ":" prop))))]
+                [(let [ent  (drill-out-name-for-clojure entity)
+                       prop (drill-out-name-for-clojure (:name property))]
+                   {:assoc         true
+                    :ent           ent :prop prop
+                    :f-tbl         (build-additional-tbl-name
+                                    cardinality entity property args)
+                    :f-id          (make-id-column-name entity)
+                    :s-id          (make-id-column-name (crd cardinality))
+                    :insert-values (make-insert-values % ent prop)
+                    :and-single    (if (= % :one-to-one) true false)})
+                 (let [ent  (drill-out-name-for-clojure (crd cardinality))
+                       prop (drill-out-name-for-clojure (:back-property
+                                                         cardinality))]
+                   {:assoc         true
+                    :ent           ent :prop prop
+                    :f-tbl         (build-additional-tbl-name
+                                    cardinality entity property args)
+                    :f-id          (make-id-column-name (crd cardinality))
+                    :s-id          (make-id-column-name entity)
+                    :insert-values (make-insert-values % ent prop)
+                    :and-single    (if (= % :one-to-one) true false)})]))
    :simpl-coll-q ""
    :recursive-q  ""})
 
 (defn assoc->dissoc-queries
-  [side params]
-  (fn [] (let [side-key  (case side
-                           :one-side :one-side-qs
-                           :oto&mtm  :oto&mtm-qs
-                           :many-side-qs)
-               qs        ((side-key (apply assoc-queries params)))
+  [crd side params]
+  (fn [] (let [side-key (case side
+                          :one-side  :one-side-qs
+                          :many-side :many-side-qs
+                          :oto&mtm   :oto&mtm-qs)
+               qs       (case side-key
+                          :oto&mtm-qs
+                          ((side-key (apply assoc-queries params)) crd)
+                          ((side-key (apply assoc-queries params))))
                make-dissoc-all-q
-               (fn [from update-id]
-                 [(-> from
-                      (dissoc :assoc :f-id-val :s-id :update-where)
-                      (assoc :dissoc-all true
-                             :s-id update-id
-                             :update-where (str "= :" update-id)))])]
+               (if-not (= crd :oto&mtm)
+                 (fn [from update-id]
+                   [(-> from
+                        (dissoc :assoc :f-id-val :s-id :update-where)
+                        (assoc :dissoc-all true
+                               :s-id update-id
+                               :update-where (str "= :" update-id)))]))]
            (concat (mapv #(assoc (dissoc % :assoc :f-id-val) :dissoc true) qs)
                    ;; dissoc-all queries
-                   (make-dissoc-all-q (second qs) (:prop (first qs)))
-                   (if (= :oto&mtm-qs side-key)
+                   (if-not (= crd :one-to-one)
+                     (make-dissoc-all-q (second qs) (:prop (first qs))))
+                   (if (= crd :many-to-many)
                      (make-dissoc-all-q (first qs) (:prop (second qs))))))))
 
 (defn- dissoc-queries
   [& [cardinality entity property args crd recursive :as p]]
-  {:one-side-qs  (assoc->dissoc-queries :one-side p)
-   :many-side-qs (assoc->dissoc-queries :many-side p)
-   :oto&mtm-qs   (assoc->dissoc-queries :oto&mtm p)
+  {:one-side-qs  (assoc->dissoc-queries :one-to-many :one-side p)
+   :many-side-qs (assoc->dissoc-queries :one-to-many :many-side p)
+   :oto&mtm-qs   #(assoc->dissoc-queries % :oto&mtm p)
    :simpl-coll-q ""
    :recursive-q  ""})
 
