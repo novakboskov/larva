@@ -9,15 +9,17 @@ WHERE <<r.f-id>> <<r.sign>> <% if r.no-nest %>:<<r.ent>><% else %>(SELECT <<r.s-
 WHERE <<r.s-id>> <<r.update-where>><% else %>INSERT INTO <<r.f-tbl>> (<<r.f-id>>, <<r.s-id>>)
 VALUES <<r.insert-values>><% endif %>
 
-<% endif %><% if r.dissoc %>-- :name dissoc-<<r.ent>>-<<r.prop>>! :!
--- :doc dissociates <<r.ent>> from corresponding <<r.prop>>
+<% endif %><% if r.dissoc %>-- :name dissoc-<<r.ent>>-<<r.prop>>! :!<% if r.reverse-doc %>
+-- :doc dissociates <<r.prop>> from <<r.ent>><% else %>
+-- :doc dissociates <<r.ent>> from corresponding <<r.prop>><% endif %>
 <% if r.update %>UPDATE <<r.f-tbl>>
 SET <<r.f-id>> = NULL
 WHERE <<r.s-id>> <<r.update-where>><% else %>DELETE FROM <<r.f-tbl>>
 WHERE <<r.f-id>> = :<<r.ent>> AND <<r.s-id>> <% if r.and-single %>= :<<r.prop>><% else %>IN :tuple:<<r.prop>><% endif %><% endif %>
 
-<% endif %><% if r.dissoc-all %>-- :name dissoc-all-<<r.ent>>-<<r.prop>>! :!
--- :doc dissociates all <<r.ent>> from corresponding <<r.prop>>
+<% endif %><% if r.dissoc-all %>-- :name dissoc-all-<<r.ent>>-<<r.prop>>! :!<% if r.reverse-doc %>
+-- :doc dissociates all <<r.prop>> from <<r.ent>><% else %>
+-- :doc dissociates all <<r.ent>> from corresponding <<r.prop>><% endif %>
 <% if r.update %>UPDATE <<r.f-tbl>>
 SET <<r.f-id>> = NULL
 WHERE <<r.s-id>> <<r.update-where>><% else %>DELETE FROM <<r.f-tbl>>

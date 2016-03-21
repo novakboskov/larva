@@ -221,7 +221,7 @@
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd6 entity1 p6 nil {}))))
         ;; A simple collection relationship
-        (is (= "-- :name get-musician-honors :? :*\n-- :doc returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll WHERE musician_id = :musician\n\n\n"
+        (is (= "-- :name get-musician-honors :? :*\n-- :doc returns honors associated with musician\nSELECT * FROM Musicians__honors__smpl_coll\nWHERE musician_id = :musician\n\n-- :name assoc-musician-honors! :!\n-- :doc associates musician with corresponding honors\nINSERT INTO Musicians__honors__smpl_coll (musician_id, honors)\nVALUES \n/*~\n(let [single (:musician params)]\n    (clojure.string/join\n        \", \" (for [m (:honors params)]\"(\" single \", \" m \")\")))\n~*/\n\n-- :name dissoc-musician-honors! :!\n-- :doc dissociates honors from musician\nDELETE FROM Musicians__honors__smpl_coll\nWHERE musician_id = :musician AND honors IN :tuple:honors\n\n-- :name dissoc-all-musician-honors! :!\n-- :doc dissociates all honors from musician\nDELETE FROM Musicians__honors__smpl_coll\nWHERE musician_id = :musician\n\n\n"
                (common/render-template
                 (slurp templ-hugsql) (tbl/make-queries-keys crd4 entity0 p4 nil {})))))
        (eval-in-environment
