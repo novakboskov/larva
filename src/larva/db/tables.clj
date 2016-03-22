@@ -33,7 +33,8 @@
    (s/optional-key :update-where)  s/Str  (s/optional-key :f-id-val)   s/Str
    (s/optional-key :sel-multi)     s/Bool (s/optional-key :dissoc-all) s/Bool
    (s/optional-key :insert-values) s/Str  (s/optional-key :and-single) s/Bool
-   (s/optional-key :reverse-doc)   s/Bool})
+   (s/optional-key :reverse-doc)   s/Bool (s/optional-key :assoc-rev)  s/Bool
+   (s/optional-key :dissoc-rev)    s/Bool (s/optional-key :get-rev)    s/Bool})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -187,12 +188,17 @@
                                         ((:oto&mtm-qs q-get) :one-to-one)
                                         ((:oto&mtm-qs q-assoc) :one-to-one)
                                         (((:oto&mtm-qs q-dissoc) :one-to-one))))
-        :simple-collection (merge-keys (concat ((:simpl-coll-q q-get))
-                                               ((:simpl-coll-q q-assoc))
-                                               ((:simpl-coll-q q-dissoc)))))
+        :simple-collection (merge-keys (concat ((:simpl-coll-qs q-get))
+                                               ((:simpl-coll-qs q-assoc))
+                                               ((:simpl-coll-qs q-dissoc)))))
       (case crd
-        :one-to-one   (merge-keys [((:recursive-q q-get) :one-to-one)])
-        :many-to-many (merge-keys [((:recursive-q q-get) :many-to-many)])))))
+        :one-to-one   (merge-keys (concat
+                                   ((:recursive-qs q-get) :one-to-one)
+                                   ((:recursive-qs q-assoc) :one-to-one)
+                                   (((:recursive-qs q-dissoc) :one-to-one))))
+        :many-to-many (merge-keys (concat
+                                   ((:recursive-qs q-get) :many-to-many)
+                                   ((:recursive-qs q-assoc) :many-to-many)))))))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
