@@ -163,42 +163,37 @@
                      :to-table this-tbl})))
     keys-map))
 
+(defn- do-qs-functions-calls
+  "Performs functions that return queries keys maps"
+  [q-get q-assoc q-dissoc queries-key]
+  (concat ((queries-key q-get))
+          ((queries-key q-assoc))
+          ((queries-key q-dissoc))))
+
 (s/defn ^:always-validate make-queries-keys :- QueryKeys
   [cardinality entity property args keys-map :- AlterKeys]
   (let [crd        (get-cardinality-keyword cardinality)
         recursive  (contains? cardinality :recursive)
-        merge-keys #(merge-with concat keys-map {:queries %})
         queries    (queries cardinality entity property args crd recursive)
         q-get      (:get queries)
         q-assoc    (:assoc queries)
-        q-dissoc   (:dissoc queries)]
+        q-dissoc   (:dissoc queries)
+        merge-keys #(merge-with
+                     concat keys-map
+                     {:queries (do-qs-functions-calls q-get q-assoc q-dissoc %)})]
     (if (not recursive)
       (case crd
-        :one-to-many       (merge-keys (concat ((:one-side-qs q-get))
-                                               ((:one-side-qs q-assoc))
-                                               ((:one-side-qs q-dissoc))))
-        :many-to-one       (merge-keys (concat ((:many-side-qs q-get))
-                                               ((:many-side-qs q-assoc))
-                                               ((:many-side-qs q-dissoc))))
-        :many-to-many      (merge-keys (concat
-                                        ((:oto&mtm-qs q-get) :many-to-many)
-                                        ((:oto&mtm-qs q-assoc) :many-to-many)
-                                        (((:oto&mtm-qs q-dissoc) :many-to-many))))
-        :one-to-one        (merge-keys (concat
-                                        ((:oto&mtm-qs q-get) :one-to-one)
-                                        ((:oto&mtm-qs q-assoc) :one-to-one)
-                                        (((:oto&mtm-qs q-dissoc) :one-to-one))))
-        :simple-collection (merge-keys (concat ((:simpl-coll-qs q-get))
-                                               ((:simpl-coll-qs q-assoc))
-                                               ((:simpl-coll-qs q-dissoc)))))
+        :one-to-many                (merge-keys :one-side-qs)
+        :many-to-one                (merge-keys :many-side-qs)
+        (:many-to-many :one-to-one) (merge-keys :oto&mtm-qs)
+        :simple-collection          (merge-keys :smpl-coll-qs))
       (case crd
-        :one-to-one   (merge-keys (concat
-                                   ((:recursive-qs q-get) :one-to-one)
-                                   ((:recursive-qs q-assoc) :one-to-one)
-                                   (((:recursive-qs q-dissoc) :one-to-one))))
-        :many-to-many (merge-keys (concat
-                                   ((:recursive-qs q-get) :many-to-many)
-                                   ((:recursive-qs q-assoc) :many-to-many)))))))
+        :one-to-one   (merge-keys :recursive-qs)
+        :many-to-many (merge-with concat keys-map
+                                  {:queries
+                                   (concat
+                                    ((:recursive-qs q-get))
+                                    ((:recursive-qs q-assoc)))})))))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))

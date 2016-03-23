@@ -33,3 +33,9 @@
   (try
     (s/validate schema data)
     (catch Exception e false)))
+
+(defn swap-keys
+  "Swaps values of two keys in map"
+  [map k1 k2]
+  (let [f (get map k1) s (get map k2)]
+    (assoc map k1 s k2 f)))

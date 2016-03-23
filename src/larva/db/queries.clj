@@ -1,6 +1,8 @@
 (ns larva.db.queries
-  (:require [larva.db.utils :refer :all]
-            [larva.db.commons :refer :all]))
+  (:require [larva.db
+             [commons :refer :all]
+             [utils :refer :all]]
+            [clojure.set :as set]))
 
 (defmulti get-get-query-function-for (fn [for _ _ _ _ _ _] for))
 
@@ -44,22 +46,22 @@
   #(identity [{:ent       (drill-out-name-for-clojure entity)
                :prop      (drill-out-name-for-clojure (:name property))
                :f-tbl     (build-db-table-name (crd cardinality) args)
-               :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+               :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
                :s-id      (make-id-column-name (crd cardinality))
                :s-tbl     (build-additional-tbl-name
                            cardinality entity property args)
                :t-id      (make-id-column-name entity)
-               :sel-multi (true? (= % :many-to-many))}
+               :sel-multi (true? (= crd :many-to-many))}
               {:ent       (drill-out-name-for-clojure (crd cardinality))
                :prop      (drill-out-name-for-clojure (:back-property
                                                        cardinality))
                :f-tbl     (build-db-table-name entity)
-               :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+               :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
                :s-id      (make-id-column-name entity)
                :s-tbl     (build-additional-tbl-name
                            cardinality entity property args)
                :t-id      (make-id-column-name (crd cardinality))
-               :sel-multi (true? (= % :many-to-many))}]))
+               :sel-multi (true? (= crd :many-to-many))}]))
 
 (defmethod get-get-query-function-for :simpl-coll-q
   [for cardinality entity property args crd recursive]
@@ -76,12 +78,12 @@
                    {:ent       (drill-out-name-for-clojure entity)
                     :prop      (drill-out-name-for-clojure (:name property))
                     :f-tbl     (build-db-table-name entity args)
-                    :f-id      "id" :sign (if (= % :many-to-many) "IN" "=")
+                    :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
                     :s-id      (make-id-column-name entity)
                     :s-tbl     (build-additional-tbl-name
                                 cardinality entity property args)
                     :t-id      (make-id-column-name entity true)
-                    :sel-multi (true? (= % :many-to-many))}]
+                    :sel-multi (true? (= crd :many-to-many))}]
                [get-query
                 ;; get reverse query
                 (assoc get-query :get-rev true)])))
@@ -96,7 +98,7 @@
      (apply get-get-query-function-for :many-side-qs p)
      :oto&mtm-qs
      (apply get-get-query-function-for :oto&mtm-qs p)
-     :simpl-coll-qs
+     :smpl-coll-qs
      (apply get-get-query-function-for :simpl-coll-q p)
      :recursive-qs
      (apply get-get-query-function-for :recursive-qs p)}))
@@ -169,8 +171,8 @@
                                  cardinality entity property args)
                  :f-id          (make-id-column-name entity)
                  :s-id          (make-id-column-name (crd cardinality))
-                 :insert-values (make-insert-values % ent prop)
-                 :and-single    (if (= % :one-to-one) true false)})
+                 :insert-values (make-insert-values crd ent prop)
+                 :and-single    (if (= crd :one-to-one) true false)})
               (let [ent  (drill-out-name-for-clojure (crd cardinality))
                     prop (drill-out-name-for-clojure (:back-property
                                                       cardinality))]
@@ -180,8 +182,8 @@
                                  cardinality entity property args)
                  :f-id          (make-id-column-name (crd cardinality))
                  :s-id          (make-id-column-name entity)
-                 :insert-values (make-insert-values % ent prop)
-                 :and-single    (if (= % :one-to-one) true false)})]))
+                 :insert-values (make-insert-values crd ent prop)
+                 :and-single    (if (= crd :one-to-one) true false)})]))
 
 (defmethod get-assoc-query-function-for :simple-collection
   [for cardinality entity property args crd recursive]
@@ -198,22 +200,25 @@
 
 (defmethod get-assoc-query-function-for :recursive-qs
   [for cardinality entity property args crd recursive]
-  #(identity (let [ent  (drill-out-name-for-clojure entity)
-                   prop (drill-out-name-for-clojure (:name property))
-                   assoc-query
-                   {:assoc         true
-                    :ent           ent :prop prop
-                    :f-tbl         (build-additional-tbl-name
-                                    cardinality entity property args)
-                    :f-id          (make-id-column-name entity)
-                    :s-id          (make-id-column-name (crd cardinality) true)
-                    :insert-values (make-insert-values % ent prop)
-                    :and-single    (if (= % :one-to-one) true false)}]
-               [assoc-query
-                ;; assoc reverse query
-                (-> (dissoc assoc-query :assoc)
-                    (assoc :assoc-rev true
-                           :insert-values (make-insert-values % prop ent)))])))
+  (fn []
+    (let [ent  (drill-out-name-for-clojure entity)
+          prop (drill-out-name-for-clojure (:name property))
+          assoc-query
+          {:assoc         true
+           :ent           ent :prop prop
+           :f-tbl         (build-additional-tbl-name
+                           cardinality entity property args)
+           :f-id          (make-id-column-name entity)
+           :s-id          (make-id-column-name (crd cardinality) true)
+           :insert-values (make-insert-values crd ent prop)
+           :and-single    (if (= crd :one-to-one) true false)}]
+      [assoc-query
+       ;; assoc reverse query
+       (-> (dissoc assoc-query :assoc)
+           (assoc :assoc-rev true
+                  :insert-values (make-insert-values crd prop ent))
+           (#(case crd :many-to-many                                                                     (set/rename-keys % {:f-id :s-id
+                                                                                                                             :s-id :f-id}) %)))])))
 
 (defn- assoc-queries [cardinality entity property args crd recursive]
   (let [p [cardinality entity property args crd recursive]]
@@ -223,7 +228,7 @@
      (apply get-assoc-query-function-for :many-side-qs p)
      :oto&mtm-qs
      (apply get-assoc-query-function-for :oto&mtm-qs p)
-     :simpl-coll-qs
+     :smpl-coll-qs
      (apply get-assoc-query-function-for :simple-collection p)
      :recursive-qs
      (apply get-assoc-query-function-for :recursive-qs p)}))
@@ -277,19 +282,18 @@
   dissoc-all key map."
   [crd side params]
   (fn []
-    ^{:break/when (and (= side :recursive) (= crd :one-to-one))}
     (let [side-key (case side
                      :one-side          :one-side-qs
                      :many-side         :many-side-qs
                      :oto&mtm           :oto&mtm-qs
-                     :simple-collection :simpl-coll-qs
+                     :simple-collection :smpl-coll-qs
                      :recursive         :recursive-qs)
           ;; corresponding assoc queries
           qs       (case side-key
-                     (:one-side-qs :many-side-qs :simpl-coll-qs)
+                     (:one-side-qs :many-side-qs :smpl-coll-qs)
                      ((side-key (apply assoc-queries params)))
                      (:oto&mtm-qs :recursive-qs)
-                     ((side-key (apply assoc-queries params)) crd))]
+                     ((side-key (apply assoc-queries params))))]
       (concat (make-dissoc-qs side crd qs)
               ;; dissoc-all queries
               (if (= crd :simple-collection)
@@ -300,11 +304,11 @@
 
 (defn- dissoc-queries
   [& [cardinality entity property args crd recursive :as p]]
-  {:one-side-qs   (assoc->dissoc-queries :one-to-many :one-side p)
-   :many-side-qs  (assoc->dissoc-queries :one-to-many :many-side p)
-   :oto&mtm-qs    #(assoc->dissoc-queries % :oto&mtm p)
-   :simpl-coll-qs (assoc->dissoc-queries :simple-collection :simple-collection p)
-   :recursive-qs  #(assoc->dissoc-queries % :recursive p)})
+  {:one-side-qs  (assoc->dissoc-queries crd :one-side p)
+   :many-side-qs (assoc->dissoc-queries crd :many-side p)
+   :oto&mtm-qs   (assoc->dissoc-queries crd :oto&mtm p)
+   :smpl-coll-qs (assoc->dissoc-queries crd :simple-collection p)
+   :recursive-qs (assoc->dissoc-queries crd :recursive p)})
 
 (defn queries
   [cardinality entity property args crd recursive]
