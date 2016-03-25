@@ -1,4 +1,6 @@
 (ns larva.db.queries
+  "This namespace contains functions which serve to create maps that are
+  later used to fill additional queries template."
   (:require [larva.db
              [commons :refer :all]
              [utils :refer :all]]
@@ -217,8 +219,9 @@
        (-> (dissoc assoc-query :assoc)
            (assoc :assoc-rev true
                   :insert-values (make-insert-values crd prop ent))
-           (#(case crd :many-to-many                                                                     (set/rename-keys % {:f-id :s-id
-                                                                                                                             :s-id :f-id}) %)))])))
+           (#(case crd :many-to-many
+                   (set/rename-keys % {:f-id :s-id
+                                       :s-id :f-id}) %)))])))
 
 (defn- assoc-queries [cardinality entity property args crd recursive]
   (let [p [cardinality entity property args crd recursive]]
@@ -233,27 +236,51 @@
      :recursive-qs
      (apply get-assoc-query-function-for :recursive-qs p)}))
 
-(defmulti make-dissoc-all-q (fn [crd _ _] crd))
+(defn make-dissoc-all-q-dispatch [side crd _ _]
+  (case [side crd]
+    [:recursive :many-to-many] :many-to-many-r
+    crd))
+
+(defmulti make-dissoc-all-q
+  "Build dissoc all queries from assoc ones"
+  #'make-dissoc-all-q-dispatch)
 
 (defmethod make-dissoc-all-q :default
-  [crd from update-id]
-  (cond
-    (not (#{:oto&mtm :one-to-one} crd))
-    [(-> from
-         (dissoc :assoc :f-id-val :s-id :update-where)
-         (assoc :dissoc-all true
-                :s-id update-id
-                :update-where (str "= :" update-id)))]
-    :default []))
+  [_ crd first second]
+  (let [update-id (:prop first)]
+    (case crd
+      (:one-to-many :many-to-one)
+      [(-> second
+           (dissoc :assoc :f-id-val :s-id :update-where)
+           (assoc :dissoc-all true
+                  :s-id update-id
+                  :update-where (str "= :" update-id)))]
+      [])))
 
 (defmethod make-dissoc-all-q :simple-collection
-  [crd from _]
-  [(-> from (dissoc :update :assoc) (assoc :dissoc-all true
-                                           :reverse-doc true))])
+  [_ _ first  _]
+  [(-> first (dissoc :update :assoc) (assoc :dissoc-all true
+                                            :reverse-doc true))])
 
-(defmethod make-dissoc-all-q :recursive
-  [crd from _]
-  [])
+(defmethod make-dissoc-all-q :many-to-many
+  [_ _ first second]
+  (let [base-fn #(-> (dissoc %1 :assoc :f-id-val :s-id :update-where)
+                     (assoc :dissoc-all true
+                            :s-id %2
+                            :update-where (str "= :" %2)))]
+    [(base-fn second (:prop first))
+     (base-fn first (:prop second))]))
+
+(defmethod make-dissoc-all-q :many-to-many-r
+  [_ _ first second]
+  (let [base-fn (fn [f s reverse-name]
+                  (-> (dissoc f :assoc :f-id-val :s-id :update-where :assoc-rev)
+                      (assoc :dissoc-all true
+                             :s-id s
+                             :update-where (str "= :" s))
+                      (#(if reverse-name (assoc % :name-rev true) %))))]
+    [(base-fn first (:prop second) false)
+     (base-fn second (:prop first) true)]))
 
 (defmulti make-dissoc-qs (fn [side _ _] side))
 
@@ -296,11 +323,7 @@
                      ((side-key (apply assoc-queries params))))]
       (concat (make-dissoc-qs side crd qs)
               ;; dissoc-all queries
-              (if (= crd :simple-collection)
-                (make-dissoc-all-q crd (first qs) nil)
-                (make-dissoc-all-q crd (second qs) (:prop (first qs))))
-              (if (= crd :many-to-many)
-                (make-dissoc-all-q crd (first qs) (:prop (second qs))))))))
+              (make-dissoc-all-q side crd (first qs) (second qs))))))
 
 (defn- dissoc-queries
   [& [cardinality entity property args crd recursive :as p]]
