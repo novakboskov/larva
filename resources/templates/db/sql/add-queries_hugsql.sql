@@ -32,7 +32,7 @@ WHERE <<r.f-id>> = :<<r.ent>> AND <<r.s-id>> <% if r.and-single %>= :<<r.prop>><
 DELETE FROM <<r.f-tbl>>
 WHERE <<r.s-id>> = :<<r.ent>> AND <<r.f-id>> <% if r.and-single %>= :<<r.prop>><% else %>IN :tuple:<<r.prop>><% endif %>
 
-<% endif %><% if r.dissoc-all %>-- :name dissoc-all-<<r.ent>>-<<r.prop>>! :!<% if r.reverse-doc %>
+<% endif %><% if r.dissoc-all %>-- :name dissoc-all-<<r.ent>>-<<r.prop>><% if r.name-rev %>-reverse<% endif %>! :!<% if r.reverse-doc %>
 -- :doc dissociates all <<r.prop>> from <<r.ent>><% else %>
 -- :doc dissociates all <<r.ent>> from corresponding <<r.prop>><% endif %>
 <% if r.update %>UPDATE <<r.f-tbl>>

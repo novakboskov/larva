@@ -34,7 +34,8 @@
    (s/optional-key :sel-multi)     s/Bool (s/optional-key :dissoc-all) s/Bool
    (s/optional-key :insert-values) s/Str  (s/optional-key :and-single) s/Bool
    (s/optional-key :reverse-doc)   s/Bool (s/optional-key :assoc-rev)  s/Bool
-   (s/optional-key :dissoc-rev)    s/Bool (s/optional-key :get-rev)    s/Bool})
+   (s/optional-key :dissoc-rev)    s/Bool (s/optional-key :get-rev)    s/Bool
+   (s/optional-key :name-rev)      s/Bool})
 
 (s/def TableKeys
   {(s/optional-key :create-tables) [CreateTableMap]})
@@ -187,13 +188,7 @@
         :many-to-one                (merge-keys :many-side-qs)
         (:many-to-many :one-to-one) (merge-keys :oto&mtm-qs)
         :simple-collection          (merge-keys :smpl-coll-qs))
-      (case crd
-        :one-to-one   (merge-keys :recursive-qs)
-        :many-to-many (merge-with concat keys-map
-                                  {:queries
-                                   (concat
-                                    ((:recursive-qs q-get))
-                                    ((:recursive-qs q-assoc)))})))))
+      (merge-keys :recursive-qs))))
 
 (defn- get-corresponding-made-item [made-item made]
   (if-not (= :simple-collection (first made-item))
