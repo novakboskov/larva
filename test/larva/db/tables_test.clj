@@ -3,7 +3,8 @@
             [larva
              [program-api :as api]
              [program-api-test :refer [eval-in-program-model-context]]
-             [test-data :refer :all]]
+             [test-data :refer :all]
+             [test-results :as res]]
             [larva.code-gen.common :as common]
             [larva.db
              [tables :as tbl]
@@ -262,14 +263,35 @@
         (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {}))))))))
 
-;; (deftest build-additional-templates-keys-test
-;;   (testing "Returned keys intended to fulfill create table template."
-;;     (eval-in-program-model-context
-;;      entity-have-no-properties
-;;      (let [ents      (api/all-entities)
-;;            db-t      :postgres
-;;            ent-props (map #(second
-;;                             (tbl/build-db-create-table-string %1 %2 db-t false
-;;                                                               nil))
-;;                           ents (map #(api/entity-properties %) ents))]
-;;        (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))))
+(deftest build-additional-templates-keys-test
+  (testing "Returned keys which are used to fill additional tables,
+            alter tables and additional queries templates."
+    (let [results (:build-additional-templates-keys-test res/results)]
+      (eval-in-program-model-context
+       no-entities-edge-case
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t false
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
+      (eval-in-program-model-context
+       no-entities-no-about-edge-case
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t false
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
+      ;; super-simple program
+      (eval-in-program-model-context
+       entity-have-no-properties
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t false
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= (results 0) (tbl/build-additional-templates-keys ent-props nil))))))))
