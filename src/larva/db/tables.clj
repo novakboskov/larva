@@ -173,6 +173,7 @@
 
 (s/defn ^:always-validate make-queries-keys :- QueryKeys
   [cardinality entity property args keys-map :- AlterKeys]
+  ^{:break/when (= entity "Mentor")}
   (let [crd        (get-cardinality-keyword cardinality)
         recursive  (contains? cardinality :recursive)
         queries    (queries cardinality entity property args crd recursive)
@@ -204,6 +205,7 @@
 (defn- make-keys
   "Building all the templates keys originated from relations between entities."
   [inferred-card entity property made-item made args]
+  ^{:break/when (= entity "Mentor")}
   (if (not (get-corresponding-made-item made-item made))
     (let [params [inferred-card entity property args]]
       (->> (apply make-create-tbl-keys (conj params {}))

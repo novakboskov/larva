@@ -70,6 +70,7 @@
 
 (defn- get-entity-info
   [p entity]
+  ^{:break/when (= entity "Mentor")}
   (dissoc (u/attrs p entity) :uuid))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
@@ -126,8 +127,8 @@
         (if ref-dest (u/attr program reference :back-property))
         [[back-ref] back-prop]
         (if ref-dest (get-back-ref&back-prop
-                       program entity property reference ref-dest
-                       explicit-back-property))
+                      program entity property reference ref-dest
+                      explicit-back-property))
         src-crd   (if reference (u/attr program reference :cardinality))
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
         back-prop (if back-prop {:back-property back-prop})

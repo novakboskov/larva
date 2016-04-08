@@ -21,22 +21,14 @@
    default-sql-tool))
 
 (defn- add-additional
-  [args references templates db-type force options sql-tool]
-  (let [render-options (:render-options templates)
-        force          (:force options)
-        ;; db-options
-        ;; {:alter-tables (tbl/build-alter-tables-strings references)}
-        ]
-    ;; TODO:
+  [references templates db-type force sql-tool args options]
+  (let [render-options (:render-options options)]
     (doseq [ks (tbl/build-additional-templates-keys references args)]
-      (render-assets [:additional-migrations-sql-up templates]
-                     (merge ks render-options)))
-    ;; (render-assets [(:additional-migrations-sql-up templates)
-    ;;                 (:migtrations-alter-up templates)
-    ;;                 (:additional-queries templates)
-    ;;                 (:additional-migrations-sql-down templates)]
-    ;;                (merge db-options render-options))
-    ))
+      (render-assets [(:additional-migrations-sql-up templates)
+                      (:migtrations-alter-up templates)
+                      (:additional-queries templates)
+                      (:additional-migrations-sql-down templates)]
+                     (merge ks render-options)))))
 
 (defn add-database-layer
   [options]
@@ -66,7 +58,7 @@
                           (:migrations-sql-down templates)]
                          (merge db-options (:render-options options)))
           (recur (rest ents) (conj references refs)))
-        (add-additional args references templates db-type force options sql-tool)))))
+        (add-additional references templates db-type force sql-tool args options)))))
 
 ;; TODO: generate files, track namespaces which are changed, those need to be reloaded later.
 ;; Better solutions is to make a macro which evaluates code that produce SQL queries from .sql files in corresponding namespace
@@ -85,5 +77,5 @@
         add-database-layer)))
 
 ;;;;;;play
-;; (make :model larva.test-data/custom-property-datatype :force true)
+(make :model larva.test-data/custom-property-datatype :force true)
 ;;;;;;
