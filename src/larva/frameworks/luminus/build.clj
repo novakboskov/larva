@@ -48,7 +48,8 @@
               (tbl/build-db-create-table-string entity props db-type force args)
               db-options
               {:entity             ent-db-name
-               :entity-plural      (db/build-plural-for-entity entity args)
+               :entity-plural      (db/build-plural-for-entity entity
+                                                               (:model args))
                :properties         (db/build-sequence-string props db-type :insert)
                :values-properties  (db/build-sequence-string props db-type :values)
                :set-properties     (db/build-sequence-string props db-type :set)
@@ -77,5 +78,5 @@
         add-database-layer)))
 
 ;;;;;;play
-(make :model larva.test-data/custom-property-datatype :force true)
+;; (make :model larva.test-data/custom-property-datatype :force true)
 ;;;;;;

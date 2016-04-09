@@ -57,7 +57,7 @@
               {:ent       (drill-out-name-for-clojure (crd cardinality))
                :prop      (drill-out-name-for-clojure (:back-property
                                                        cardinality))
-               :f-tbl     (build-db-table-name entity)
+               :f-tbl     (build-db-table-name entity args)
                :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
                :s-id      (make-id-column-name entity)
                :s-tbl     (build-additional-tbl-name

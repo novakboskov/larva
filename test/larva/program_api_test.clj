@@ -5,7 +5,7 @@
              [test-data :refer :all]]))
 
 (defmacro eval-in-program-model-context [program & forms]
-  "Evaluates s-expressions in context of certain program morel."
+  "Evaluates s-expressions in context of certain program model."
   `(do (larva.program-api/reset-program-model ~program)
        ~@forms
        (larva.program-api/destroy-program-model)))
