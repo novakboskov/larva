@@ -451,3 +451,22 @@
                                             :to   ["Musician"]
                                             :gui  :table-view}}
                   {:name "type" :type :str :gui-label "Instrument type"}]}]})
+
+(def entity-plurals
+  {:about
+   {:name    "Pilot model"
+    :author  "Novak Boskov"
+    :comment "This is just in the sake of a proof of concept."}
+   :meta
+   {:api-only false}
+   :entities
+   [{:signature  "Musician"
+     :plural "Bangers"
+     :properties [{:name "name" :type :str :gui-label "Name"}
+                  {:name "surname" :type :str :gui-label "Surname"}
+                  {:name "nickname" :type :str :gui-label "nick"}
+                  {:name "honors" :type {:coll :str}}
+                  {:name      "band" :type :str
+                   :gui-label "Of band"}
+                  {:name      "social-profile" :type :str
+                   :gui-label "profile"}]}]})

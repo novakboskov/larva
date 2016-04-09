@@ -143,8 +143,9 @@
   "If program specifies entity plural it will be returned, otherwise it will be
   constructed using suffix 's'."
   [entity-signature & [model-source]]
-  (let [entity (if model-source (api/entity-info entity-signature
-                                                 model-source)
+  (let [ei-args (if (contains? model-source :model) model-source
+                    {:model model-source})
+        entity (if model-source (api/entity-info entity-signature ei-args)
                    (api/entity-info entity-signature))]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (build-plural-for-db-name entity-signature))))
@@ -153,7 +154,6 @@
   "Builds DB table name from plural if model-source is present or from bare name
   if it's not."
   [entity-signature & [model-source singular]]
-  ^{:break/when (and (not model-source) (= entity-signature "Mentor"))}
   (let [to-capt (cond singular (drill-out-name-for-db entity-signature)
                       model-source
                       (build-plural-for-entity entity-signature model-source)

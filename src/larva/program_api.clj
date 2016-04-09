@@ -11,7 +11,7 @@
 
 (defonce ^:private program-model (atom nil))
 (def default-larva-dir "larva_src")
-(def ^:private default-model-path
+(def default-model-path
   (.getPath (io/file default-larva-dir "larva.clj")))
 
 (defmulti ^:private sort-by-edge
@@ -70,7 +70,6 @@
 
 (defn- get-entity-info
   [p entity]
-  ^{:break/when (= entity "Mentor")}
   (dissoc (u/attrs p entity) :uuid))
 
 (s/defn ^:always-validate entity-info :- APIEntityInfo
