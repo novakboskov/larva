@@ -227,9 +227,8 @@
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card
-                      (or
-                       (not-empty (if args (api/property-reference entity p args)
-                                      (api/property-reference entity p))))
+                      (not-empty (if args (api/property-reference entity p args)
+                                     (api/property-reference entity p)))
                       made-item (form-already-made-item inferred-card entity p)]
                   (recur (rest props) (conj made made-item)
                          (merge-with

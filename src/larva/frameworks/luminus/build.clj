@@ -23,6 +23,8 @@
 (defn- add-additional
   [references templates db-type force sql-tool args options]
   (let [render-options (:render-options options)]
+    ;; TODO: organize this other way, look at the shape of what is returned from
+    ;; tbl/build-additional-templates-keys
     (doseq [ks (tbl/build-additional-templates-keys references args)]
       (render-assets [(:additional-migrations-sql-up templates)
                       (:migtrations-alter-up templates)

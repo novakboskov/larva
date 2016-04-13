@@ -344,7 +344,7 @@
   {:about
    {:name    "Pilot"
     :author  "Novak Boskov"
-    :comment "This is just in the sake of a proof of concept."}
+    :comment "Not all the musicians are super stars!"}
    :meta
    {:api-only false
     :db       {:type :postgres :sql :hugsql}}

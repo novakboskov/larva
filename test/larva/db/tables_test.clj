@@ -294,4 +294,17 @@
                               (tbl/build-db-create-table-string %1 %2 db-t false
                                                                 nil))
                             ents (map #(api/entity-properties %) ents))]
-         (is (= (results 0) (tbl/build-additional-templates-keys ent-props nil))))))))
+         (is (= (results 0) (tbl/build-additional-templates-keys ent-props nil)))))
+      ;; :alter-tables and :queries are present in result?
+      (eval-in-program-model-context
+       custom-property-datatype
+       (let [ents (api/all-entities)
+             db-t :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t false
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))
+             template-keys
+             (tbl/build-additional-templates-keys ent-props nil)]
+         (is (and (contains? template-keys :alter-tables)
+                  (contains? template-keys :queries))))))))
