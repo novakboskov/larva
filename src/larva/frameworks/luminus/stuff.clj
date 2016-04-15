@@ -63,13 +63,13 @@
       "/db/migrations/add-entity-table.up.sql"]
      :migtrations-alter-up
      [(str "resources/migrations/" timestamp "-alter-{{entity-plural}}-table.up.sql")
-      "db/migrations/alter-entity-table.up.sql"]
+      "db/migrations/add-alter-entity-table.up.sql"]
      :migrations-sql-down
      [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.down.sql")
       "db/migrations/add-entity-table.down.sql"]
      :additional-migrations-sql-up
-     [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.up.sql")
+     [(str "resources/migrations/" timestamp "-add-{{ad-entity-plural}}-table.up.sql")
       "db/migrations/add-additional-entity-table.up.sql"]
      :additional-migrations-sql-down
-     [(str "resources/migrations/" timestamp "-{{ad-entity-plural}}-table.down.sql")
+     [(str "resources/migrations/" timestamp "-add-{{ad-entity-plural}}-table.down.sql")
       "db/migrations/add-additional-entity-table.down.sql"]}))

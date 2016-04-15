@@ -157,23 +157,23 @@
              [{:ad-entity-plural
                "Musicians__instruments__Instruments__players__mtm"
                :ad-props-create-table
-               " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id INTEGER REFERENCES Instruments(id)"}]}
+               "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id INTEGER REFERENCES Instruments(id))"}]}
             (tbl/make-create-tbl-keys crd1 entity0 p1 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural
                   "Socialmediaprofiles__owner__Musicians__social_profile__oto"
                   :ad-props-create-table
-                  " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+                  "(id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
         (is {:create-tables
              [{:ad-entity-plural "Bands__influenced__r_mtm" ,
                :ad-props-create-table
-               " id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id)"}]}
+               "(id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id))"}]}
             (= nil (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto" ,
                   :ad-props-create-table
-                  " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+                  "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         ;; make-alter-tbl-keys test
         (is (= {:alter-tables [{:table    "Musicians"
@@ -232,17 +232,17 @@
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__honors__smpl_coll"
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)))"}]}
                (tbl/make-create-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto"
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r))"}]}
                (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__influenced__r_mtm" ,
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id))"}]}
                (tbl/make-create-tbl-keys crd6 entity0 p6 nil {})))
         ;; make-alter-tbl-keys test
         (is (= {:alter-tables [{:table    "Musicians"
