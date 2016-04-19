@@ -5,7 +5,7 @@
    [{:create-tables
      [{:ad-entity-plural "Musicians__honors__smpl_coll",
        :ad-props-create-table
-       " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)"}],
+       "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30))"}],
      :queries
      [{:ent       "musician"
        :prop      "honors"

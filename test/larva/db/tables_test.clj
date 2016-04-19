@@ -165,11 +165,11 @@
                   :ad-props-create-table
                   "(id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
-        (is {:create-tables
-             [{:ad-entity-plural "Bands__influenced__r_mtm" ,
-               :ad-props-create-table
-               "(id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id))"}]}
-            (= nil (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
+        (is (= {:create-tables
+                [{:ad-entity-plural "Bands__influenced__r_mtm" ,
+                  :ad-props-create-table
+                  "(id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id))"}]}
+               (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto" ,
                   :ad-props-create-table
@@ -232,7 +232,7 @@
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__honors__smpl_coll"
                   :ad-props-create-table
-                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)))"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30))"}]}
                (tbl/make-create-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto"
@@ -298,8 +298,8 @@
       ;; :alter-tables and :queries are present in result?
       (eval-in-program-model-context
        custom-property-datatype
-       (let [ents (api/all-entities)
-             db-t :postgres
+       (let [ents      (api/all-entities)
+             db-t      :postgres
              ent-props (map #(second
                               (tbl/build-db-create-table-string %1 %2 db-t false
                                                                 nil))

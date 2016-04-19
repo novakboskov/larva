@@ -18,12 +18,12 @@
 (defn- build-sql-tool [args]
   (or
    (get-in (if args (api/program-meta args) (api/program-meta)) [:db :type])
-  default-sql-tool))
+   default-sql-tool))
 
 (defn- add-additional
   [references templates db-type force sql-tool args options]
   (let [render-options (:render-options options)
-        ks (tbl/build-additional-templates-keys references args)]
+        ks             (tbl/build-additional-templates-keys references args)]
     ;; TODO: organize this other way, look at the shape of what is returned from
     ;; tbl/build-additional-templates-keys
     (doseq [create-tables (:create-tables ks)]
