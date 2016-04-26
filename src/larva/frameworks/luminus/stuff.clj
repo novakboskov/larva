@@ -3,9 +3,9 @@
   (:require [clojure.java.io :refer [resource]]))
 
 (def ^:private queries-templates-dir "db/sql/")
-(def queries-dir "resources/sql/")
+(def ^:dynamic queries-dir "resources/sql/")
 (def ^:private migrations-templates-dir "db/migrations/")
-(def migrations-dir "resources/migrations/")
+(def ^:dynamic migrations-dir "resources/migrations/")
 
 (def core-assets
   [[".gitignore" "core/gitignore"]
