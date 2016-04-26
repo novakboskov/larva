@@ -37,7 +37,6 @@
    :mongodb
    {}})
 
-;; TODO: larva.db.tables-test/partial-key-generation-test
 (defn- simple-colection-table-columns [prim-key db-types column]
   (str "(" "id " (:id db-types) " " prim-key "," (System/lineSeparator)
        " " (nth column 0) " " (:num db-types) " REFERENCES "

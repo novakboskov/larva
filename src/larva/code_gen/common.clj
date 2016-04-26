@@ -15,15 +15,12 @@
 (defonce larva-render (mylnt/renderer "larva" render-template "templates"))
 
 (defn render-asset [render options asset]
-  ^{:break/when (try (let [[a b] asset] [a b])
-                     (catch Exception e true))}
   (if (string? asset)
     asset
     (let [[target source] asset]
       [target (larva-render source options)])))
 
 (defn render-assets [assets options]
-  ^{:break/when (contains? options :prop)}
   (binding [lnt/*dir* "."]
     (apply lnt/->files options (map #(render-asset larva-render options %)
                                     assets))))

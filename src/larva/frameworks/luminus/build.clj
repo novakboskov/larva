@@ -1,5 +1,6 @@
 (ns larva.frameworks.luminus.build
-  (:require [larva.code-gen.common :refer [render-assets]]
+  (:require [clojure.java.io :as io]
+            [larva.code-gen.common :refer [render-assets]]
             [larva.db
              [tables :as tbl]
              [utils :as db]]
@@ -8,6 +9,19 @@
             [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]))
 
 (def default-sql-tool :hugsql)
+
+(defmacro clean-field
+  "Delete files and directories which are touched by larva if it's needed
+   and evaluates passed forms in that clean context."
+  [make-args & forms]
+  `(do (cond (get-in ~make-args [:force])
+             (do (doseq [migration-files#
+                         (.listFiles (io/file stuff/migrations-dir))]
+                   (io/delete-file migration-files#))
+                 (doseq [queries-files#
+                         (.listFiles (io/file stuff/queries-dir))]
+                   (io/delete-file queries-files#))))
+       ~@forms))
 
 (defn- build-api-args-map
   [{:keys [model-path model]}]
@@ -24,19 +38,23 @@
   [references templates db-type force sql-tool args options]
   (let [render-options (:render-options options)
         ks             (tbl/build-additional-templates-keys references args)]
-    ;; TODO: organize this other way, look at the shape of what is returned from
-    ;; tbl/build-additional-templates-keys
+    ;; first make all tables
     (doseq [create-tables (:create-tables ks)]
-      (render-assets [(:additional-migrations-sql-up templates)
-                      (:additional-migrations-sql-down templates)]
+      (render-assets [(:additional-migrations-sql-up templates)]
                      (merge create-tables render-options)))
-    ;; (doseq [alter-tables (:alter-tables ks)]
-    ;;   (render-assets [(:migtrations-alter-up templates)]
-    ;;                  (merge alter-tables render-options)))
-    ;; (doseq [queries (:queries ks)]
-    ;;   (render-assets [((:additional-queries templates) sql-tool)]
-    ;;                  (merge queries render-options)))
-    ))
+    ;; then make all the alters in single file
+    (render-assets [(:migtrations-alter-up templates)]
+                   (merge ks render-options))
+    ;; then make all the alter drops in single file
+    (render-assets [(:migrations-alter-down templates)]
+                   (merge ks render-options))
+    ;; make drop tables
+    (doseq [create-tables (:create-tables ks)]
+      (render-assets [(:additional-migrations-sql-down templates)]
+                     (merge create-tables render-options)))
+    ;; then make all the additional queries
+    (render-assets [((:additional-queries templates) sql-tool)]
+                   (merge ks render-options))))
 
 (defn add-database-layer
   [options]
@@ -82,8 +100,9 @@
         {:render-options {:name       (project-name name)
                           :project-ns (sanitize-ns name)
                           :sanitized  (name-to-path name)}}]
-    (-> (merge args render-options)
-        add-database-layer)))
+    (clean-field args
+                 (-> (merge args render-options)
+                     add-database-layer))))
 
 ;;;;;;play
 ;; (make :model larva.test-data/custom-property-datatype :force true)

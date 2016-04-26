@@ -2,6 +2,11 @@
   "All variables and building material specific to a Luminus project."
   (:require [clojure.java.io :refer [resource]]))
 
+(def ^:private queries-templates-dir "db/sql/")
+(def queries-dir "resources/sql/")
+(def ^:private migrations-templates-dir "db/migrations/")
+(def migrations-dir "resources/migrations/")
+
 (def core-assets
   [[".gitignore" "core/gitignore"]
    ["project.clj" "core/project.clj"]
@@ -38,38 +43,42 @@
    ;; tests
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
-(defn- relational-db-queries [key]
-  ["resources/sql/{{entity-plural}}_queries.sql"
-   (case key
-     :yesql "db/sql/queries_yesql.sql"
-     "db/sql/queries_hugsql.sql") ])
-
-(defn- relational-db-add-queries [key]
-  ["resources/sql/{{mtm-table-name}}_queries.sql"
-   (case key
-     :yesql "/db/sql/add-queries_yesql.sql"
-     "/db/sql/add-queries_hugsql.sql")])
+(defn- relational-db-queries [additional-or-not key]
+  (let [[q-file-name q-template] (case additional-or-not
+                                   :additional ["additional_queries.sql"
+                                                (case key
+                                                  :yesql "add-queries_yesql.sql"
+                                                  "add-queries_hugsql.sql")]
+                                   ["{{entity-plural}}_queries.sql"
+                                    (case key
+                                      :yesql "queries_yesql.sql"
+                                      "queries_hugsql.sql")])]
+    [(str queries-dir q-file-name)
+     (str queries-templates-dir q-template)]))
 
 (defn relational-db-files []
   (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
                            (java.util.Date.))]
     {:core               ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
      :migrations-clj     ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries            (partial relational-db-queries)
-     :additional-queries (partial relational-db-add-queries)
+     :queries            (partial relational-db-queries false)
+     :additional-queries (partial relational-db-queries :additional)
      :core-test          ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
      :migrations-sql-up
-     [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.up.sql")
-      "/db/migrations/add-entity-table.up.sql"]
+     [(str migrations-dir timestamp "-add-{{entity-plural}}-table.up.sql")
+      (str migrations-templates-dir "add-entity-table.up.sql")]
      :migtrations-alter-up
-     [(str "resources/migrations/" timestamp "-alter-{{entity-plural}}-table.up.sql")
-      "db/migrations/add-alter-entity-table.up.sql"]
+     [(str migrations-dir timestamp "-alter-tables.up.sql")
+      (str migrations-templates-dir "add-alter-tables.up.sql")]
+     :migrations-alter-down
+     [(str migrations-dir timestamp "-alter-tables.down.sql")
+      (str migrations-templates-dir "add-alter-tables.down.sql")]
      :migrations-sql-down
-     [(str "resources/migrations/" timestamp "-add-{{entity-plural}}-table.down.sql")
-      "db/migrations/add-entity-table.down.sql"]
+     [(str migrations-dir timestamp "-add-{{entity-plural}}-table.down.sql")
+      (str migrations-templates-dir "add-entity-table.down.sql")]
      :additional-migrations-sql-up
-     [(str "resources/migrations/" timestamp "-add-{{ad-entity-plural}}-table.up.sql")
-      "db/migrations/add-additional-entity-table.up.sql"]
+     [(str migrations-dir timestamp "-add-{{ad-entity-plural}}-table.up.sql")
+      (str migrations-templates-dir "add-additional-entity-table.up.sql")]
      :additional-migrations-sql-down
-     [(str "resources/migrations/" timestamp "-add-{{ad-entity-plural}}-table.down.sql")
-      "db/migrations/add-additional-entity-table.down.sql"]}))
+     [(str migrations-dir timestamp "-add-{{ad-entity-plural}}-table.down.sql")
+      (str migrations-templates-dir "add-additional-entity-table.down.sql")]}))
