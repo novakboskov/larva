@@ -11,6 +11,8 @@
              [utils-test :refer [eval-in-environment platform-agnostic]]]
             [larva.frameworks.luminus.stuff :as stuff]))
 
+;; Tests related to SQL for main tables
+
 (deftest build-db-create-table-string-test
   (testing "Create table string and returning properties with references."
     (eval-in-program-model-context
@@ -91,6 +93,8 @@
         (is (= [string {entity []}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
 
+;; Tests related to SQL for relation-consequential tables.
+
 (deftest partial-key-generation-test
   (testing "Correctness of template keys contributed by make-create-table-keys
             make-queries-keys, and make-alter-tbl-keys."
@@ -145,10 +149,10 @@
            "resources/templates/"
            templ-yesql
            (str templates (second ((:additional-queries
-                                    (stuff/relational-db-files)) :yesql)))
+                                    stuff/relational-db-files) :yesql)))
            templ-hugsql
            (str templates (second ((:additional-queries
-                                    (stuff/relational-db-files)) :hugsql)))]
+                                    stuff/relational-db-files) :hugsql)))]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -157,13 +161,13 @@
              [{:ad-entity-plural
                "Musicians__instruments__Instruments__players__mtm"
                :ad-props-create-table
-               "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id INTEGER REFERENCES Instruments(id))"}]}
+               "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n instruments_id INTEGER REFERENCES Instruments(id))"}]}
             (tbl/make-create-tbl-keys crd1 entity0 p1 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural
                   "Socialmediaprofiles__owner__Musicians__social_profile__oto"
                   :ad-props-create-table
-                  "(id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
+                  "(id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Bands__influenced__r_mtm" ,
@@ -272,7 +276,7 @@
        (let [ents      (api/all-entities)
              db-t      :postgres
              ent-props (map #(second
-                              (tbl/build-db-create-table-string %1 %2 db-t false
+                              (tbl/build-db-create-table-string %1 %2 db-t true
                                                                 nil))
                             ents (map #(api/entity-properties %) ents))]
          (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
@@ -281,7 +285,7 @@
        (let [ents      (api/all-entities)
              db-t      :postgres
              ent-props (map #(second
-                              (tbl/build-db-create-table-string %1 %2 db-t false
+                              (tbl/build-db-create-table-string %1 %2 db-t true
                                                                 nil))
                             ents (map #(api/entity-properties %) ents))]
          (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
@@ -291,7 +295,7 @@
        (let [ents      (api/all-entities)
              db-t      :postgres
              ent-props (map #(second
-                              (tbl/build-db-create-table-string %1 %2 db-t false
+                              (tbl/build-db-create-table-string %1 %2 db-t true
                                                                 nil))
                             ents (map #(api/entity-properties %) ents))]
          (is (= (results 0) (tbl/build-additional-templates-keys ent-props nil)))))
@@ -301,7 +305,7 @@
        (let [ents      (api/all-entities)
              db-t      :postgres
              ent-props (map #(second
-                              (tbl/build-db-create-table-string %1 %2 db-t false
+                              (tbl/build-db-create-table-string %1 %2 db-t true
                                                                 nil))
                             ents (map #(api/entity-properties %) ents))
              template-keys

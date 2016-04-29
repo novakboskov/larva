@@ -82,7 +82,7 @@
    :h2
    (let [prim-key "PRIMARY KEY"]
      {:not-null "NOT NULL" :prim-key prim-key
-      :references
+      :referential-table-columns
       (partial mysql-referential-table-columns prim-key)})
    :sqlite
    {}

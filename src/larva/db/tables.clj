@@ -102,7 +102,7 @@
                tbl2 (build-db-table-name (% cardinality) args)]
            ((->> database-grammar db-type :referential-table-columns) db-types
             [(make-id-column-name tbl1) tbl1 "id" uniq]
-            [(make-id-column-name tbl1) tbl2 "id" uniq]))
+            [(make-id-column-name tbl2) tbl2 "id" uniq]))
         recursive-columns
         #(let [tbl (build-db-table-name entity args)]
            ((->> database-grammar db-type :referential-table-columns) db-types

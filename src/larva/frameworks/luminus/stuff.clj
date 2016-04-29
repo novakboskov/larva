@@ -43,6 +43,11 @@
    ;; tests
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
+(defn- get-migration-timestamp []
+  ;; TODO: This should always return timestamp string of fixed length
+  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssSS")
+           (java.util.Date.)))
+
 (defn- relational-db-queries [additional-or-not key]
   (let [[q-file-name q-template] (case additional-or-not
                                    :additional ["additional_queries.sql"
@@ -56,29 +61,35 @@
     [(str queries-dir q-file-name)
      (str queries-templates-dir q-template)]))
 
-(defn relational-db-files []
-  (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss")
-                           (java.util.Date.))]
-    {:core               ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
-     :migrations-clj     ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
-     :queries            (partial relational-db-queries false)
-     :additional-queries (partial relational-db-queries :additional)
-     :core-test          ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
-     :migrations-sql-up
-     [(str migrations-dir timestamp "-add-{{entity-plural}}-table.up.sql")
-      (str migrations-templates-dir "add-entity-table.up.sql")]
-     :migtrations-alter-up
-     [(str migrations-dir timestamp "-alter-tables.up.sql")
-      (str migrations-templates-dir "add-alter-tables.up.sql")]
-     :migrations-alter-down
-     [(str migrations-dir timestamp "-alter-tables.down.sql")
-      (str migrations-templates-dir "add-alter-tables.down.sql")]
-     :migrations-sql-down
-     [(str migrations-dir timestamp "-add-{{entity-plural}}-table.down.sql")
-      (str migrations-templates-dir "add-entity-table.down.sql")]
-     :additional-migrations-sql-up
-     [(str migrations-dir timestamp "-add-{{ad-entity-plural}}-table.up.sql")
-      (str migrations-templates-dir "add-additional-entity-table.up.sql")]
-     :additional-migrations-sql-down
-     [(str migrations-dir timestamp "-add-{{ad-entity-plural}}-table.down.sql")
-      (str migrations-templates-dir "add-additional-entity-table.down.sql")]}))
+(def relational-db-files
+  {:core               ["src/clj/{{sanitized}}/db/core.clj" "db/src/sql.db.clj"]
+   :migrations-clj     ["src/clj/{{sanitized}}/db/migrations.clj" "db/src/migrations.clj"]
+   :queries            (partial relational-db-queries false)
+   :additional-queries (partial relational-db-queries :additional)
+   :core-test          ["test/clj/{{sanitized}}/test/db/core.clj" "db/test/db/core.clj"]
+   :migrations-sql
+   (fn [] (let [timestamp (get-migration-timestamp)]
+            {:up   [(str migrations-dir timestamp
+                         "-add-{{entity-plural}}-table.up.sql")
+                    (str migrations-templates-dir "add-entity-table.up.sql")]
+             :down [(str migrations-dir timestamp
+                         "-add-{{entity-plural}}-table.down.sql")
+                    (str migrations-templates-dir "add-entity-table.down.sql")]}))
+   :migrations-alter
+   (fn [] (let [timestamp (get-migration-timestamp)]
+            {:up   [(str migrations-dir timestamp
+                         "-alter-tables.up.sql")
+                    (str migrations-templates-dir "add-alter-tables.up.sql")]
+             :down [(str migrations-dir timestamp
+                         "-alter-tables.down.sql")
+                    (str migrations-templates-dir "add-alter-tables.down.sql")]}))
+   :additional-migrations-sql
+   (fn [] (let [timestamp (get-migration-timestamp)]
+            {:up   [(str migrations-dir timestamp
+                         "-add-{{ad-entity-plural}}-table.up.sql")
+                    (str migrations-templates-dir
+                         "add-additional-entity-table.up.sql")]
+             :down [(str migrations-dir timestamp
+                         "-add-{{ad-entity-plural}}-table.down.sql")
+                    (str migrations-templates-dir
+                         "add-additional-entity-table.down.sql")]}))})
