@@ -213,17 +213,19 @@
 (defn- form-already-made-item [inferred-cardinality entity property]
   (let [crd (get-cardinality-keyword inferred-cardinality)]
     [crd {:src  [entity (:name property)]
-          :dest [(crd inferred-cardinality) (:back-perty inferred-cardinality)]}]))
+          :dest [(crd inferred-cardinality) (:back-property inferred-cardinality)]}]))
 
 (s/defn ^:always-validate build-additional-templates-keys
   "Building keys aimed to fulfill templates that create up and down migrations
    for relation-consequential tables, corresponding alters and queries."
   [ent-refs :- [{s/Str APIProperties}] args]
+  ;; through entities
   (loop [er ent-refs made [] template-keys {}]
     (if (not-empty er)
       (let [[entity properties] (first (first er))
             [made-untll-now t-keys]
-            (loop [props properties made [] t-keys {}]
+            ;; through it's properties
+            (loop [props properties made (first made) t-keys {}]
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card
@@ -236,6 +238,6 @@
                           t-keys (make-keys inferred-card entity p made-item
                                             made args))))
                 [made t-keys]))]
-        (recur (rest er) (conj made made-untll-now)
+        (recur (rest er) (conj (first made) made-untll-now)
                (merge-with concat template-keys t-keys)))
       template-keys)))
