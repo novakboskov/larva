@@ -44,8 +44,7 @@
    ["test/{{sanitized}}/test/handler.clj" "core/test/handler.clj"]])
 
 (defn- get-migration-timestamp []
-  ;; TODO: This should always return timestamp string of fixed length
-  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssSS")
+  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssSSS")
            (java.util.Date.)))
 
 (defn- relational-db-queries [additional-or-not key]
