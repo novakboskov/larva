@@ -183,13 +183,15 @@
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__band"
                                 :on       "band"
-                                :to-table "Bands"}]}
+                                :to-table "Bands"
+                                :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__dream_band"
                                 :on       "dream_band"
-                                :to-table "Bands"}]}
+                                :to-table "Bands"
+                                :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))
@@ -252,13 +254,15 @@
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__band"
                                 :on       "band"
-                                :to-table "Bands"}]}
+                                :to-table "Bands"
+                                :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
         (is (= {:alter-tables [{:table    "Musicians"
                                 :fk-name  "FK__Musicians__Bands__dream_band"
                                 :on       "dream_band"
-                                :to-table "Bands"}]}
+                                :to-table "Bands"
+                                :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))

@@ -73,17 +73,20 @@
    (let [prim-key "PRIMARY KEY"]
      {:not-null "NOT NULL" :prim-key prim-key
       :referential-table-columns
-      (partial psql-referential-table-columns prim-key)})
+      (partial psql-referential-table-columns prim-key)
+      :drop-constraint "CONSTRAINT"})
    :mysql
    (let [prim-key "PRIMARY KEY"]
      {:not-null "NOT NULL" :prim-key prim-key
       :referential-table-columns
-      (partial mysql-referential-table-columns prim-key)})
+      (partial mysql-referential-table-columns prim-key)
+      :drop-constraint "FOREIGN KEY"})
    :h2
    (let [prim-key "PRIMARY KEY"]
      {:not-null "NOT NULL" :prim-key prim-key
       :referential-table-columns
-      (partial mysql-referential-table-columns prim-key)})
+      (partial mysql-referential-table-columns prim-key)
+      :drop-constraint "CONSTRAINT"})
    :sqlite
    {}
    :mongodb

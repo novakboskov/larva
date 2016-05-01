@@ -21,7 +21,8 @@
   {:ad-entity-plural s/Str :ad-props-create-table s/Str})
 
 (s/def AlterMap
-  {:table s/Str :fk-name s/Str :on s/Str :to-table s/Str})
+  {:table           s/Str :fk-name s/Str :on s/Str :to-table s/Str
+   :drop-constraint s/Str})
 
 (s/def QueryMap
   {:ent                            s/Str  :prop                        s/Str
@@ -73,7 +74,8 @@
   corresponding entity."
   [entity :- s/Str properties db-type force args]
   (let [[_ db-types]
-        (first (make-db-data-types-config :db-type db-type :force force))]
+        (first (make-db-data-types-config :db-type db-type :force force
+                                          :make-args args))]
     (loop [props        properties
            props-w-refs {entity []}
            strings      [(str "id " (:id db-types) " "
@@ -94,7 +96,7 @@
 (defn- build-additional-tbl-create-tbl-string
   [cardinality entity property args]
   (let [crd                (get-cardinality-keyword cardinality)
-        [db-type db-types] (first (make-db-data-types-config))
+        [db-type db-types] (first (make-db-data-types-config :make-args args))
         recursive          (contains? cardinality :recursive)
         uniq               (if (= crd :one-to-one) true)
         non-recursive-columns
@@ -143,25 +145,29 @@
   [cardinality entity property args keys-map :- TableKeys]
   (if-let [crd (#{:many-to-one :one-to-many}
                 (get-cardinality-keyword cardinality))]
-    (let [merge-keys     #(merge-with concat keys-map {:alter-tables [%]})
+    (let [[db-type _]    (first (make-db-data-types-config :make-args args))
+          merge-keys     #(merge-with concat keys-map {:alter-tables [%]})
           this-tbl       (build-db-table-name entity args)
           referenced-tbl (build-db-table-name (crd cardinality) args)
-          prop-name      (:name property)]
+          prop-name      (:name property)
+          drop-const     (:drop-constraint (db-type database-grammar))]
       (case crd
         :one-to-many
-        (merge-keys {:table    this-tbl
-                     :fk-name  (build-foreign-key-name referenced-tbl this-tbl
-                                                       prop-name)
-                     :on       (drill-out-name-for-db prop-name)
-                     :to-table referenced-tbl})
+        (merge-keys {:table           this-tbl
+                     :fk-name         (build-foreign-key-name referenced-tbl this-tbl
+                                                              prop-name)
+                     :on              (drill-out-name-for-db prop-name)
+                     :to-table        referenced-tbl
+                     :drop-constraint drop-const})
         :many-to-one
-        (merge-keys {:table    referenced-tbl
-                     :fk-name  (build-foreign-key-name
-                                this-tbl referenced-tbl
-                                (:back-property cardinality))
-                     :on       (drill-out-name-for-db
-                                (:back-property cardinality))
-                     :to-table this-tbl})))
+        (merge-keys {:table           referenced-tbl
+                     :fk-name         (build-foreign-key-name
+                                       this-tbl referenced-tbl
+                                       (:back-property cardinality))
+                     :on              (drill-out-name-for-db
+                                       (:back-property cardinality))
+                     :to-table        this-tbl
+                     :drop-constraint drop-const})))
     keys-map))
 
 (defn- do-qs-functions-calls

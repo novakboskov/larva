@@ -127,9 +127,17 @@
   "Makes database types configuration file if it is not present.
   It can receive map containing :model or :model-path as :spec key.
   Returns that configuration."
-  [& {:keys [spec db-type force]}]
+  [& {:keys [spec db-type make-args force]}]
   (if (or (not (.exists default-db-data-types-config)) force)
-    (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))
+    (let [db-type (cond db-type db-type
+                        spec (infer-db-type spec)
+                        make-args (cond (contains? make-args :model)
+                                   (infer-db-type {:model (:model make-args)})
+                                   (contains? make-args :model-path)
+                                   (infer-db-type {:model-path
+                                                   (:model-path make-args)})
+                                   :else (infer-db-type))
+                        :else (infer-db-type))
           content (db-type database-types-config)]
       (utils/spit-data default-db-data-types-config
                        (if content {db-type content} {}))))
