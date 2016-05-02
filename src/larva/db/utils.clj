@@ -97,7 +97,7 @@
   What can be either :insert, :create-table, :values or :set."
   (fn [_ _ what] what))
 
-(defmethod build-sequence-string :insert
+(defmethod build-sequence-string :values
   [properties _ _]
   (str "("
        (cs/replace-first
@@ -106,7 +106,7 @@
         ", " "")
        ")"))
 
-(defmethod build-sequence-string :values
+(defmethod build-sequence-string :insert
   [properties _ _]
   (str "("
        (cs/replace-first

@@ -38,6 +38,6 @@ WHERE <<r.s-id>> = :<<r.ent>> AND <<r.f-id>> <% if r.and-single %>= :<<r.prop>><
 <% if r.update %>UPDATE <<r.f-tbl>>
 SET <<r.f-id>> = NULL
 WHERE <<r.s-id>> <<r.update-where>><% else %>DELETE FROM <<r.f-tbl>>
-WHERE <<r.f-id>> = :<<r.ent>>
+WHERE <<r.f-id>> = :<<r.ent>><% endif %>
 
-<% endif %><% endif %><% endfor %>
+<% endif %><% endfor %>

@@ -60,10 +60,10 @@
     (eval-in-program-model-context
      standard-program-1
      (let [db-type (utils/infer-db-type)]
-       (is (= "(name, genre, largeness, members)"
+       (is (= "(:name, :genre, :largeness, :members)"
               (utils/build-sequence-string (api/entity-properties "Band")
                                            db-type :values)))
-       (is (= "(:name, :genre, :largeness, :members)"
+       (is (= "(name, genre, largeness, members)"
               (utils/build-sequence-string (api/entity-properties "Band")
                                            db-type :insert)))
        (is (= "name = :name, genre = :genre, largeness = :largeness, members = :members"
