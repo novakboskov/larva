@@ -11,6 +11,8 @@
 (s/def APIEntityInfo
   {:signature s/Str (s/optional-key :plural) s/Str})
 
+(def APIDataType mm/DataType)
+
 (def APISimpleDataType mm/SimpleDataType)
 
 (def APICustomDataType mm/CustomDataType)

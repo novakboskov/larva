@@ -161,3 +161,34 @@
               (api/property-reference "Band" property))))
      (let [property {:name "name" :type :str :gui-label "Name"}]
        (is (= {} (api/property-reference "Musician" property)))))))
+
+(deftest property-data-type-test
+  (testing "Returned data type declared in property."
+    (is (= :str (api/property-data-type
+                 "Musician"
+                 {:name "name" :type :str :gui-label "Name"}
+                 {:model custom-property-datatype})))
+    (is (= {:one :reference
+            :to  ["Band" "members"]
+            :gui :select-form}
+           (api/property-data-type
+            "Musician"
+            {:name      "band" :type {:one :reference
+                                      :to  ["Band" "members"]
+                                      :gui :select-form}
+             :gui-label "Of band"}
+            {:model custom-property-datatype})))
+    (eval-in-program-model-context
+     custom-property-datatype
+     (is (= :str (api/property-data-type
+                  "Musician"
+                  {:name "name" :type :str :gui-label "Name"})))
+     (is (= {:one :reference
+             :to  ["Band" "members"]
+             :gui :select-form}
+            (api/property-data-type
+             "Musician"
+             {:name      "band" :type {:one :reference
+                                       :to  ["Band" "members"]
+                                       :gui :select-form}
+              :gui-label "Of band"}))))))

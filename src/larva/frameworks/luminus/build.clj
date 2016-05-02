@@ -1,13 +1,14 @@
 (ns larva.frameworks.luminus.build
   (:require [clojure.java.io :as io]
+            [larva
+             [program-api :as api]
+             [utils :refer [api-call]]]
             [larva.code-gen.common :refer [render-assets]]
             [larva.db
              [tables :as tbl]
              [utils :as db]]
             [larva.frameworks.luminus.stuff :as stuff]
-            [larva.program-api :as api]
-            [leiningen.new.templates :refer [name-to-path project-name
-                                             sanitize-ns]]))
+            [leiningen.new.templates :refer [name-to-path project-name sanitize-ns]]))
 
 (def default-sql-tool :hugsql)
 
@@ -32,7 +33,7 @@
 
 (defn- build-sql-tool [args]
   (or
-   (get-in (if args (api/program-meta args) (api/program-meta)) [:db :type])
+   (get-in (api-call args api/program-meta) [:db :type])
    default-sql-tool))
 
 (defn- add-additional
@@ -62,13 +63,12 @@
   (let [args     (build-api-args-map options)
         sql-tool (build-sql-tool args)
         force    (:force options)
-        entities (if args (api/all-entities args) (api/all-entities))
+        entities (api-call args api/all-entities)
         db-type  (if args (db/infer-db-type args) (db/infer-db-type))]
     (loop [ents entities references []]
       (if (not-empty ents)
         (let [entity         (nth ents 0)
-              props          (if args (api/entity-properties entity args)
-                                 (api/entity-properties entity))
+              props          (api-call args api/entity-properties entity)
               [props-create-table refs]
               (tbl/build-db-create-table-string entity props db-type force args)
               db-options

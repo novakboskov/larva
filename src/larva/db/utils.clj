@@ -6,8 +6,7 @@
             [larva
              [messages :as msg]
              [program-api :as api]
-             [program-api-schemes :as sch]
-             [utils :as utils]]
+             [utils :as utils :refer [api-call]]]
             [larva.db.stuff :as stuff :refer :all]
             [yesql.core :refer [defqueries]]))
 
@@ -20,8 +19,7 @@
   otherwise type of used database will be inferred from database drivers provided
   in project.clj."
   [& args]
-  (or (get-in (if args (apply api/program-meta args) (api/program-meta))
-              [:db :type])
+  (or (get-in (api-call args api/program-meta) [:db :type])
       (let [deps     (map #(str (first %)) (:dependencies
                                             (utils/make-project-clj-map)))
             matcher  #(re-matches (re-pattern (str "^.*" %1 ".*$")) %2)

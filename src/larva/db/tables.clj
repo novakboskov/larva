@@ -6,7 +6,7 @@
             [larva
              [program-api :as api]
              [program-api-schemes :as sch :refer [APIProperties]]
-             [utils :as utils]]
+             [utils :as utils :refer [api-call]]]
             [larva.db
              [commons :refer :all]
              [queries :refer [queries]]
@@ -50,7 +50,7 @@
    (s/optional-key :alter-tables)  [AlterMap]
    (s/optional-key :queries)       [QueryMap]})
 
-(defn- infer-property-data-type
+(defn- infer-property-db-data-type
   "Returns a vector consisted of string to be placed as data type of table column
   if that column is needed and indicator that shows if it represents a reference."
   [prop-type-key cardinality db-types]
@@ -81,10 +81,11 @@
            strings      [(str "id " (:id db-types) " "
                               (:prim-key (db-type database-grammar)))]]
       (if (not-empty props)
-        (let [p         (nth props 0) t (:type p)
-              crd       (if args (api/property-reference entity p args)
-                            (api/property-reference entity p))
-              [type rf] (infer-property-data-type t crd db-types)]
+        (let [p         (nth props 0)
+              t         (api-call args api/property-data-type entity p)
+              crd       (api-call args api/property-reference entity p)
+              ;; TODO: Bug, infer-property-db-data-type always returns nil.
+              [type rf] (infer-property-db-data-type t crd db-types)]
           (recur
            (rest props)
            (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
@@ -235,8 +236,7 @@
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card
-                      (not-empty (if args (api/property-reference entity p args)
-                                     (api/property-reference entity p)))
+                      (not-empty (api-call args api/property-reference entity p))
                       made-item (form-already-made-item inferred-card entity p)]
                   (recur (rest props) (conj made made-item)
                          (merge-with

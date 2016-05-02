@@ -4,8 +4,9 @@
             [clojure.java.io :as io]
             [larva
              [graph :as g]
+             [meta-model :refer [Collection]]
              [program-api-schemes :refer :all]
-             [utils :refer [parse-project-clj]]]
+             [utils :as utils :refer [parse-project-clj]]]
             [schema.core :as s]
             [ubergraph.core :as u]))
 
@@ -132,7 +133,9 @@
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
         back-prop (if back-prop {:back-property back-prop})
         recursive (if (= reference back-ref) {:recursive true})]
-    (cond (not reference)  {}
+    (cond (and (not reference) (utils/valid? Collection property))
+          {:simple-collection :pseudo-reference}
+          (not reference)  {}
           (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
           (merge {:many-to-many ref-dest} back-prop recursive)
           (and back-ref (and (= src-crd :one) (= dest-crd :one)))
@@ -170,3 +173,14 @@
   ([] (get-program-about (model->program)))
   ([{:keys [model-path model] :as model-options}]
    (get-program-about (resolve-program model-options))))
+
+(defn- get-property-data-type [program entity property]
+  (-> (u/attrs program (g/build-property-label property entity))
+      :type))
+
+(s/defn property-data-type :- APIDataType
+  "Returns data type of a property."
+  ([entity :- s/Str property :- APIProperty]
+   (get-property-data-type (model->program) entity property))
+  ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]
+   (get-property-data-type (resolve-program model-options) entity property)))
