@@ -10,7 +10,7 @@
      [{:ent       "musician"
        :prop      "honors"
        :f-tbl     "Musicians__honors__smpl_coll"
-       :f-id      "musician_id"
+       :f-id      "musicians_id"
        :sign      "="
        :no-nest   true
        :sel-multi true}
@@ -18,14 +18,14 @@
        :ent   "musician"
        :prop  "honors"
        :f-tbl "Musicians__honors__smpl_coll"
-       :f-id  "musician_id"
+       :f-id  "musicians_id"
        :s-id  "honors"
        :insert-values
        "\n/*~\n(let [single (:musician params)]\n    (clojure.string/join\n        \", \" (for [m (:honors params)]\"(\" single \", \" m \")\")))\n~*/"}
       {:ent         "musician"
        :prop        "honors"
        :f-tbl       "Musicians__honors__smpl_coll"
-       :f-id        "musician_id"
+       :f-id        "musicians_id"
        :s-id        "honors"
        :insert-values
        "\n/*~\n(let [single (:musician params)]\n    (clojure.string/join\n        \", \" (for [m (:honors params)]\"(\" single \", \" m \")\")))\n~*/",
@@ -34,7 +34,7 @@
       {:ent         "musician"
        :prop        "honors"
        :f-tbl       "Musicians__honors__smpl_coll"
-       :f-id        "musician_id"
+       :f-id        "musicians_id"
        :s-id        "honors"
        :insert-values
        "\n/*~\n(let [single (:musician params)]\n    (clojure.string/join\n        \", \" (for [m (:honors params)]\"(\" single \", \" m \")\")))\n~*/",

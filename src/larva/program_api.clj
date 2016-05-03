@@ -129,8 +129,6 @@
                    (remove #(empty? (first %)))) 0))))
 
 (defn- get-property-reference [program entity property]
-  ^{:break/when (and (= entity "Musician")
-                     (= property {:name "honors" :type {:coll :str}}))}
   (let [reference (first
                    (->> (g/build-property-label property entity)
                         (u/out-edges program)

@@ -7,7 +7,7 @@
              [messages :as msg]
              [program-api :as api]
              [utils :as utils :refer [api-call]]]
-            [larva.db.stuff :as stuff :refer :all]
+            [larva.db.stuff :refer :all]
             [yesql.core :refer [defqueries]]))
 
 (def objects (atom {}))
@@ -127,15 +127,15 @@
   Returns that configuration."
   [& {:keys [spec db-type make-args force]}]
   (if (or (not (.exists default-db-data-types-config)) force)
-    (let [db-type (cond db-type db-type
-                        spec (infer-db-type spec)
+    (let [db-type (cond db-type   db-type
+                        spec      (infer-db-type spec)
                         make-args (cond (contains? make-args :model)
-                                   (infer-db-type {:model (:model make-args)})
-                                   (contains? make-args :model-path)
-                                   (infer-db-type {:model-path
-                                                   (:model-path make-args)})
-                                   :else (infer-db-type))
-                        :else (infer-db-type))
+                                        (infer-db-type {:model (:model make-args)})
+                                        (contains? make-args :model-path)
+                                        (infer-db-type {:model-path
+                                                        (:model-path make-args)})
+                                        :else (infer-db-type))
+                        :else     (infer-db-type))
           content (db-type database-types-config)]
       (utils/spit-data default-db-data-types-config
                        (if content {db-type content} {}))))
@@ -151,8 +151,8 @@
   [entity-signature & [model-source]]
   (let [ei-args (if (contains? model-source :model) model-source
                     {:model model-source})
-        entity (if model-source (api/entity-info entity-signature ei-args)
-                   (api/entity-info entity-signature))]
+        entity  (if model-source (api/entity-info entity-signature ei-args)
+                    (api/entity-info entity-signature))]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (build-plural-for-db-name entity-signature))))
 

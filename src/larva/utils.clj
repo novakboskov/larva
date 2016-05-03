@@ -42,7 +42,6 @@
 
 (defn api-call [args function & necessary]
   "Optional API call logic encapsulation."
-  ^{:break/when (= necessary ["Musician"])}
   (if args (let [necessary (vec necessary)
                  call-args (if (sequential? args)
                              (apply (partial conj necessary) args)
