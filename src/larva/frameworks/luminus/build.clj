@@ -69,14 +69,17 @@
       (if (not-empty ents)
         (let [entity         (nth ents 0)
               props          (api-call args api/entity-properties entity)
-              [props-create-table refs]
+              [props-create-table refs {nc-as-props :needed-columns}]
               (tbl/build-db-create-table-string entity props db-type force args)
               db-options
               {:entity             (db/drill-out-name-for-clojure entity)
                :entity-plural      (db/build-db-table-name entity args)
-               :properties         (db/build-sequence-string props db-type :insert)
-               :values-properties  (db/build-sequence-string props db-type :values)
-               :set-properties     (db/build-sequence-string props db-type :set)
+               :properties         (db/build-sequence-string
+                                    nc-as-props db-type :insert)
+               :values-properties  (db/build-sequence-string
+                                    nc-as-props db-type :values)
+               :set-properties     (db/build-sequence-string
+                                    nc-as-props db-type :set)
                :props-create-table props-create-table}
               migrations-sql ((:migrations-sql stuff/relational-db-files))]
           (render-assets [(:up migrations-sql)

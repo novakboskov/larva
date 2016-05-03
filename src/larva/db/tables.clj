@@ -15,7 +15,9 @@
             [schema.core :as s]))
 
 (s/def DBStringRefs
-  [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")])
+  [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")
+   (s/optional {:needed-columns APIProperties
+                :entity s/Str} "needed-columns")])
 
 (s/def CreateTableMap
   {:ad-entity-plural s/Str :ad-props-create-table s/Str})
@@ -82,7 +84,8 @@
     (loop [props        properties
            props-w-refs {entity []}
            strings      [(str "id " (:id db-types) " "
-                              (:prim-key (db-type database-grammar)))]]
+                              (:prim-key (db-type database-grammar)))]
+           needed-colls {:needed-columns [] :entity entity}]
       (if (not-empty props)
         (let [p         (nth props 0)
               t         (api-call args api/property-data-type entity p)
@@ -90,12 +93,16 @@
               [type rf] (infer-property-db-data-type t crd db-types)]
           (recur
            (rest props)
-           (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
+           (if rf (merge-with conj props-w-refs {entity p}) props-w-refs)
            (if (is-column-needed? crd)
              (conj strings (str (drill-out-name-for-db (:name p)) " " type))
-             strings)))
+             strings)
+           (if (is-column-needed? crd) (merge-with conj needed-colls
+                                                   {:needed-columns p})
+               needed-colls)))
         [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings) ")")
-         props-w-refs]))))
+         props-w-refs
+         needed-colls]))))
 
 (defn- build-additional-tbl-create-tbl-string
   [cardinality entity property args]

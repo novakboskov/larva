@@ -23,7 +23,7 @@
             ps     (api/entity-properties entity)
             string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER)")]
         (is (= [string
-                {"Musician"
+                {entity
                  [{:name "honors" :type {:coll :str}}
                   {:name      "band"
                    :type
@@ -58,7 +58,20 @@
                    :type
                    {:one :reference
                     :to  ["Mentor" "learner"]
-                    :gui :select-form}}]}]
+                    :gui :select-form}}]}
+                {:needed-columns
+                 [{:name "name", :type :str, :gui-label "Name"}
+                  {:name "surname", :type :str, :gui-label "Surname"}
+                  {:name "nickname", :type "VARCHAR(20)", :gui-label "nick"}
+                  {:name      "band",
+                   :type
+                   {:one :reference, :to ["Band" "members"], :gui :select-form},
+                   :gui-label "Of band"}
+                  {:name      "dream band",
+                   :type
+                   {:one :reference, :to ["Band" "dream about"], :gui :select-form},
+                   :gui-label "Dream about"}],
+                 :entity entity}]
                (tbl/build-db-create-table-string entity ps :postgres true nil)))))
      (eval-in-environment
       :mysql
@@ -83,13 +96,24 @@
                    :gui-label "Participated in"}
                   {:name "influenced" :type {:coll :reference
                                              :to   ["Band" "influenced"]
-                                             :gui  :table-view}}]}]
+                                             :gui  :table-view}}]}
+                {:needed-columns
+                 [{:name "name", :type :str, :gui-label "Name"}
+                  {:name "genre", :type :str, :gui-label "Genre"}
+                  {:name "largeness", :type :num, :gui-label "Largeness"}
+                  {:name      "category",
+                   :type
+                   {:one :reference, :to ["Category" "bands"], :gui :drop-list},
+                   :gui-label "Category"}],
+                 :entity entity}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))
       (let [entity (last (drop-last 1 (api/all-entities)))
             ps     (api/entity-properties entity)
             string (platform-agnostic
                     "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n more_info VARCHAR(30))")]
-        (is (= [string {entity []}]
+        (is (= [string {entity []}
+                {:needed-columns [{:name "more info", :type :str}],
+                 :entity         "more info"}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
 
 ;; Tests related to SQL for relation-consequential tables.
@@ -179,17 +203,17 @@
                   "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         ;; make-alter-tbl-keys test
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__band"
-                                :on       "band"
-                                :to-table "Bands"
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__band"
+                                :on              "band"
+                                :to-table        "Bands"
                                 :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__dream_band"
-                                :on       "dream_band"
-                                :to-table "Bands"
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__dream_band"
+                                :on              "dream_band"
+                                :to-table        "Bands"
                                 :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
@@ -250,17 +274,17 @@
                   "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id))"}]}
                (tbl/make-create-tbl-keys crd6 entity0 p6 nil {})))
         ;; make-alter-tbl-keys test
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__band"
-                                :on       "band"
-                                :to-table "Bands"
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__band"
+                                :on              "band"
+                                :to-table        "Bands"
                                 :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__dream_band"
-                                :on       "dream_band"
-                                :to-table "Bands"
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__dream_band"
+                                :on              "dream_band"
+                                :to-table        "Bands"
                                 :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
