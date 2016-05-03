@@ -66,9 +66,12 @@ To do that you should make a fresh [Luminus](http://www.luminusweb.net/docs#crea
 Setup your database connection using ```profiles.clj``` in the root of your
 project.
 
-Then add Larva as a dependency of your fresh project:
+Then add [larva jar](https://clojars.org/larva) as a dependency of your fresh
+project:
 
 ``` clojure
+;; in project.clj
+
 :dependencies [[org.clojure/clojure "1.8.0"]
                  ...
                  [larva "0.1.0-SNAPSHOT"]]
@@ -94,15 +97,16 @@ the [Mount](https://github.com/tolitius/mount) states.
 Then enter the ```<your application>.db.core``` namespace and run:
 
 ``` clojure
-(conman/bind-connection *db* "sql/additional_queries.sql")
-(conman/bind-connection *db* "sql/Bands_queries.sql")
-(conman/bind-connection *db* "sql/Categories_queries.sql")
-(conman/bind-connection *db* "sql/Festivals_queries.sql")
-(conman/bind-connection *db* "sql/Instruments_queries.sql")
-(conman/bind-connection *db* "sql/Mentors_queries.sql")
-(conman/bind-connection *db* "sql/More_infos_queries.sql")
-(conman/bind-connection *db* "sql/Musicians_queries.sql")
-(conman/bind-connection *db* "sql/Socialmediaprofiles_queries.sql")
+(conman/bind-connection *db*
+                        "sql/additional_queries.sql"
+                        "sql/Bands_queries.sql"
+                        "sql/Categories_queries.sql"
+                        "sql/Festivals_queries.sql"
+                        "sql/Instruments_queries.sql"
+                        "sql/Mentors_queries.sql"
+                        "sql/More_infos_queries.sql"
+                        "sql/Musicians_queries.sql"
+                        "sql/Socialmediaprofiles_queries.sql")
 ```
 
 This will bind all the [HugSQL](http://www.hugsql.org/) queries to database
