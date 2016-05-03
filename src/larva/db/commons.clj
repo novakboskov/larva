@@ -18,11 +18,12 @@
   "Works only for those cardinalities which are originated from property
   that represents reference."
   [cardinality]
-  (cond (or (nil? cardinality) (= {} cardinality)) :simple-collection
+  (cond (= cardinality :not-a-reference)           :not-a-reference
         (contains? cardinality :many-to-many)      :many-to-many
         (contains? cardinality :one-to-one)        :one-to-one
         (contains? cardinality :many-to-one)       :many-to-one
-        (contains? cardinality :one-to-many)       :one-to-many))
+        (contains? cardinality :one-to-many)       :one-to-many
+        (contains? cardinality :simple-collection) :simple-collection))
 
 (defn build-additional-tbl-name
   "Building name of an additional table which is relation by-product."

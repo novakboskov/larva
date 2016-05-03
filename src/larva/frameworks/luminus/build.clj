@@ -93,7 +93,9 @@
 ;; maybe user wants to add some more code in this file, model refreshing should not affect that code.
 
 (defn make
-  "Generate Luminus project from larva meta-model pointed to by path."
+  "Generate Luminus project from larva meta-model.
+   Model could be provided as :model key, or by path using :model-path key.
+   If there is none of the keys then default larva model location is used."
   [& {:keys [model-path model force] :as args}]
   (let [name (api/project-name)
         render-options

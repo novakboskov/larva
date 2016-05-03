@@ -68,6 +68,9 @@
           (utils/valid? sch/APICustomDataType prop-type-key)
           [prop-type-key false])))
 
+(defn- is-column-needed? [crd]
+  (#{:one-to-many :not-a-reference} (get-cardinality-keyword crd)))
+
 (s/defn ^:always-validate build-db-create-table-string :- DBStringRefs
   "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
   properties that are representing any kind of references mapped to
@@ -84,13 +87,13 @@
         (let [p         (nth props 0)
               t         (api-call args api/property-data-type entity p)
               crd       (api-call args api/property-reference entity p)
-              ;; TODO: Bug, infer-property-db-data-type always returns nil.
               [type rf] (infer-property-db-data-type t crd db-types)]
           (recur
            (rest props)
            (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
-           (if type (conj strings (str (drill-out-name-for-db (:name p)) " " type))
-               strings)))
+           (if (is-column-needed? crd)
+             (conj strings (str (drill-out-name-for-db (:name p)) " " type))
+             strings)))
         [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings) ")")
          props-w-refs]))))
 
@@ -236,7 +239,8 @@
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card
-                      (not-empty (api-call args api/property-reference entity p))
+                      (as-> (api-call args api/property-reference entity p) $
+                        (if-not (= $ :not-a-reference) $))
                       made-item (form-already-made-item inferred-card entity p)]
                   (recur (rest props) (conj made made-item)
                          (merge-with

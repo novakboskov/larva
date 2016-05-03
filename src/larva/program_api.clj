@@ -94,6 +94,17 @@
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (get-entity-properties (resolve-program model-options) entity)))
 
+(defn- get-property-data-type [program entity property]
+  (-> (u/attrs program (g/build-property-label property entity))
+      :type))
+
+(s/defn property-data-type :- APIDataType
+  "Returns data type of a property."
+  ([entity :- s/Str property :- APIProperty]
+   (get-property-data-type (model->program) entity property))
+  ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]
+   (get-property-data-type (resolve-program model-options) entity property)))
+
 (defn- get-back-ref&back-prop
   [program entity property reference ref-dest explicit-back-property]
   (and ref-dest
@@ -118,6 +129,8 @@
                    (remove #(empty? (first %)))) 0))))
 
 (defn- get-property-reference [program entity property]
+  ^{:break/when (and (= entity "Musician")
+                     (= property {:name "honors" :type {:coll :str}}))}
   (let [reference (first
                    (->> (g/build-property-label property entity)
                         (u/out-edges program)
@@ -133,9 +146,9 @@
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
         back-prop (if back-prop {:back-property back-prop})
         recursive (if (= reference back-ref) {:recursive true})]
-    (cond (and (not reference) (utils/valid? Collection property))
+    (cond (and (not reference) (utils/valid? Collection (:type property)))
           {:simple-collection :pseudo-reference}
-          (not reference)  {}
+          (not reference)  :not-a-reference
           (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
           (merge {:many-to-many ref-dest} back-prop recursive)
           (and back-ref (and (= src-crd :one) (= dest-crd :one)))
@@ -173,14 +186,3 @@
   ([] (get-program-about (model->program)))
   ([{:keys [model-path model] :as model-options}]
    (get-program-about (resolve-program model-options))))
-
-(defn- get-property-data-type [program entity property]
-  (-> (u/attrs program (g/build-property-label property entity))
-      :type))
-
-(s/defn property-data-type :- APIDataType
-  "Returns data type of a property."
-  ([entity :- s/Str property :- APIProperty]
-   (get-property-data-type (model->program) entity property))
-  ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]
-   (get-property-data-type (resolve-program model-options) entity property)))

@@ -21,7 +21,7 @@
       :postgres
       (let [entity (nth (api/all-entities) 0)
             ps     (api/entity-properties entity)
-            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER,\n social_profile INTEGER,\n instruments INTEGER,\n knows_how_to_repair INTEGER,\n disrespected_by INTEGER,\n mentor INTEGER)")]
+            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER)")]
         (is (= [string
                 {"Musician"
                  [{:name "honors" :type {:coll :str}}
@@ -64,8 +64,7 @@
       :mysql
       (let [entity (nth (api/all-entities) 1)
             ps     (api/entity-properties entity)
-            string (platform-agnostic
-                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER)")]
+            string (platform-agnostic "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER)")]
         (is (= [string
                 {entity
                  [{:name      "members" :type {:coll :reference
