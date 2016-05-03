@@ -121,9 +121,8 @@ connection.
       musician (create-musician! {:name       "Philip" :surname "Yonas"
                                   :nickname   "Fisha"  :band    nil
                                   :dream_band nil})]
-
   (assoc-musician-band! {:band (:id band) :musician (:id musician)})
-  (assoc-musician-mentor! {:musician (:id musician) :mentor (:id mentor)} )
+  (assoc-musician-mentor! {:musician (:id musician) :mentor (:id mentor)})
   (println (str (:name musician) " is rockin' with "
                 (-> {:musician (:id musician)}
                     get-musician-band
