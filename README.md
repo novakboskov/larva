@@ -18,8 +18,9 @@ Larva is a software package containing a tiny DSL, code generators and other
 utilities.
 
 It is divided into two parts:
-    * ```larva.db``` (provides db utilities)
-    * ```larva.web``` (provides generating web applications)
+
+* ```larva.db``` (provides db utilities)
+* ```larva.web``` (provides generating web applications)
 
 Since Clojure tooling getting more diverse Larva is striving to provide support
 for best practices from Clojure community or to be tool/framework independent
