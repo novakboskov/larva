@@ -1,10 +1,10 @@
 (ns larva.db.queries
   "This namespace contains functions which serve to create maps that are
   later used to fill additional queries template."
-  (:require [larva.db
+  (:require [clojure.set :as set]
+            [larva.db
              [commons :refer :all]
-             [utils :refer :all]]
-            [clojure.set :as set]))
+             [utils :refer :all]]))
 
 (defmulti get-get-query-function-for (fn [for _ _ _ _ _ _] for))
 
@@ -49,20 +49,20 @@
                :prop      (drill-out-name-for-clojure (:name property))
                :f-tbl     (build-db-table-name (crd cardinality) args)
                :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
-               :s-id      (make-id-column-name (crd cardinality))
+               :s-id      (get-db-table-id (crd cardinality) args)
                :s-tbl     (build-additional-tbl-name
                            cardinality entity property args)
-               :t-id      (make-id-column-name entity)
+               :t-id      (get-db-table-id entity args)
                :sel-multi (true? (= crd :many-to-many))}
               {:ent       (drill-out-name-for-clojure (crd cardinality))
                :prop      (drill-out-name-for-clojure (:back-property
                                                        cardinality))
                :f-tbl     (build-db-table-name entity args)
                :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
-               :s-id      (make-id-column-name entity)
+               :s-id      (get-db-table-id entity args)
                :s-tbl     (build-additional-tbl-name
                            cardinality entity property args)
-               :t-id      (make-id-column-name (crd cardinality))
+               :t-id      (get-db-table-id (crd cardinality) args)
                :sel-multi (true? (= crd :many-to-many))}]))
 
 (defmethod get-get-query-function-for :simpl-coll-q
@@ -71,8 +71,8 @@
                :prop    (drill-out-name-for-clojure (:name property))
                :f-tbl   (build-additional-tbl-name
                          cardinality entity property args)
-               :f-id    (make-id-column-name entity) :sign      "="
-               :no-nest true                         :sel-multi true}]))
+               :f-id    (get-db-table-id entity args) :sign      "="
+               :no-nest true                          :sel-multi true}]))
 
 (defmethod get-get-query-function-for :recursive-qs
   [for cardinality entity property args crd recursive]
@@ -81,10 +81,10 @@
                     :prop      (drill-out-name-for-clojure (:name property))
                     :f-tbl     (build-db-table-name entity args)
                     :f-id      "id" :sign (if (= crd :many-to-many) "IN" "=")
-                    :s-id      (make-id-column-name entity)
+                    :s-id      (get-db-table-id entity args)
                     :s-tbl     (build-additional-tbl-name
                                 cardinality entity property args)
-                    :t-id      (make-id-column-name entity true)
+                    :t-id      (get-db-table-id entity args true)
                     :sel-multi (true? (= crd :many-to-many))}]
                [get-query
                 ;; get reverse query
@@ -171,8 +171,8 @@
                  :ent           ent :prop prop
                  :f-tbl         (build-additional-tbl-name
                                  cardinality entity property args)
-                 :f-id          (make-id-column-name entity)
-                 :s-id          (make-id-column-name (crd cardinality))
+                 :f-id          (get-db-table-id entity args)
+                 :s-id          (get-db-table-id (crd cardinality) args)
                  :insert-values (make-insert-values crd ent prop)
                  :and-single    (if (= crd :one-to-one) true false)})
               (let [ent  (drill-out-name-for-clojure (crd cardinality))
@@ -182,8 +182,8 @@
                  :ent           ent :prop prop
                  :f-tbl         (build-additional-tbl-name
                                  cardinality entity property args)
-                 :f-id          (make-id-column-name (crd cardinality))
-                 :s-id          (make-id-column-name entity)
+                 :f-id          (get-db-table-id (crd cardinality) args)
+                 :s-id          (get-db-table-id entity args)
                  :insert-values (make-insert-values crd ent prop)
                  :and-single    (if (= crd :one-to-one) true false)})]))
 
@@ -196,7 +196,7 @@
                  :prop          prop
                  :f-tbl         (build-additional-tbl-name
                                  cardinality entity property args)
-                 :f-id          (make-id-column-name entity)
+                 :f-id          (get-db-table-id entity args)
                  :s-id          (drill-out-name-for-db (:name property))
                  :insert-values (make-insert-values crd ent prop)}])))
 
@@ -210,8 +210,8 @@
            :ent           ent :prop prop
            :f-tbl         (build-additional-tbl-name
                            cardinality entity property args)
-           :f-id          (make-id-column-name entity)
-           :s-id          (make-id-column-name (crd cardinality) true)
+           :f-id          (get-db-table-id entity args)
+           :s-id          (get-db-table-id (crd cardinality) args true)
            :insert-values (make-insert-values crd ent prop)
            :and-single    (if (= crd :one-to-one) true false)}]
       [assoc-query

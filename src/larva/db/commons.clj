@@ -1,8 +1,15 @@
 (ns larva.db.commons
   (:require [larva.db.utils :refer :all]))
 
-(defn make-id-column-name [entity & recursive]
+(defn make-id-column-name [entity & [recursive]]
   (str (drill-out-name-for-db entity) "_id" (if recursive "_r")))
+
+(defn get-db-table-id [entity args & [recursive]]
+  "Returning DB column name for column that is reference (foreign key) to
+   table that represents entity."
+  (-> entity
+      (build-db-table-name (:model args))
+      (make-id-column-name recursive)))
 
 (defn make-hugsql-values-string [single multi]
   (str (System/lineSeparator) "/*~" (System/lineSeparator)

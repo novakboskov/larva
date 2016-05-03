@@ -106,6 +106,7 @@
 
 (defn- build-additional-tbl-create-tbl-string
   [cardinality entity property args]
+  ^{:break/when (= property {:name "honors" :type {:coll :str}})}
   (let [crd                (get-cardinality-keyword cardinality)
         [db-type db-types] (first (make-db-data-types-config :make-args args))
         recursive          (contains? cardinality :recursive)
@@ -114,13 +115,13 @@
         #(let [tbl1 (build-db-table-name entity args)
                tbl2 (build-db-table-name (% cardinality) args)]
            ((->> database-grammar db-type :referential-table-columns) db-types
-            [(make-id-column-name tbl1) tbl1 "id" uniq]
-            [(make-id-column-name tbl2) tbl2 "id" uniq]))
+            [(get-db-table-id entity args) tbl1 "id" uniq]
+            [(get-db-table-id (% cardinality) args) tbl2 "id" uniq]))
         recursive-columns
         #(let [tbl (build-db-table-name entity args)]
            ((->> database-grammar db-type :referential-table-columns) db-types
-            [(make-id-column-name tbl) tbl "id" uniq]
-            [(make-id-column-name tbl true) tbl "id" uniq]))]
+            [(get-db-table-id entity args) tbl "id" uniq]
+            [(get-db-table-id entity args true) tbl "id" uniq]))]
     (if (not recursive)
       (case crd
         :many-to-many (non-recursive-columns :many-to-many)
@@ -128,9 +129,9 @@
         :simple-collection
         (let [tbl (build-db-table-name entity args)]
           ((->> database-grammar db-type :referential-table-columns) db-types
-           [(make-id-column-name tbl) tbl "id"
+           [(get-db-table-id entity args) tbl "id"
             (drill-out-name-for-db (:name property))
-            (get-in property [:type :coll])])))
+            (:coll (api/property-data-type entity property args))])))
       (recursive-columns))))
 
 (s/defn ^:always-validate make-create-tbl-keys :- TableKeys
@@ -192,10 +193,8 @@
   [cardinality entity property args keys-map :- AlterKeys]
   (let [crd        (get-cardinality-keyword cardinality)
         recursive  (contains? cardinality :recursive)
-        queries    (queries cardinality entity property args crd recursive)
-        q-get      (:get queries)
-        q-assoc    (:assoc queries)
-        q-dissoc   (:dissoc queries)
+        {q-get :get q-assoc :assoc q-dissoc :dissoc}
+        (queries cardinality entity property args crd recursive)
         merge-keys #(merge-with
                      concat keys-map
                      {:queries (do-qs-functions-calls q-get q-assoc q-dissoc %)})]
