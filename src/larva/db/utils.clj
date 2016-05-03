@@ -6,8 +6,7 @@
             [larva
              [messages :as msg]
              [program-api :as api]
-             [program-api-schemes :as sch]
-             [utils :as utils]]
+             [utils :as utils :refer [api-call]]]
             [larva.db.stuff :as stuff :refer :all]
             [yesql.core :refer [defqueries]]))
 
@@ -20,8 +19,7 @@
   otherwise type of used database will be inferred from database drivers provided
   in project.clj."
   [& args]
-  (or (get-in (if args (apply api/program-meta args) (api/program-meta))
-              [:db :type])
+  (or (get-in (api-call args api/program-meta) [:db :type])
       (let [deps     (map #(str (first %)) (:dependencies
                                             (utils/make-project-clj-map)))
             matcher  #(re-matches (re-pattern (str "^.*" %1 ".*$")) %2)
@@ -95,9 +93,9 @@
 (defmulti build-sequence-string
   "Builds string suited for INSERT, CREATE TABLE or VALUES SQL statement.
   What can be either :insert, :create-table, :values or :set."
-  (fn [properties db-type what] what))
+  (fn [_ _ what] what))
 
-(defmethod build-sequence-string :insert
+(defmethod build-sequence-string :values
   [properties _ _]
   (str "("
        (cs/replace-first
@@ -106,7 +104,7 @@
         ", " "")
        ")"))
 
-(defmethod build-sequence-string :values
+(defmethod build-sequence-string :insert
   [properties _ _]
   (str "("
        (cs/replace-first
@@ -127,9 +125,17 @@
   "Makes database types configuration file if it is not present.
   It can receive map containing :model or :model-path as :spec key.
   Returns that configuration."
-  [& {:keys [spec db-type force]}]
+  [& {:keys [spec db-type make-args force]}]
   (if (or (not (.exists default-db-data-types-config)) force)
-    (let [db-type (or db-type (if spec (infer-db-type spec) (infer-db-type)))
+    (let [db-type (cond db-type db-type
+                        spec (infer-db-type spec)
+                        make-args (cond (contains? make-args :model)
+                                   (infer-db-type {:model (:model make-args)})
+                                   (contains? make-args :model-path)
+                                   (infer-db-type {:model-path
+                                                   (:model-path make-args)})
+                                   :else (infer-db-type))
+                        :else (infer-db-type))
           content (db-type database-types-config)]
       (utils/spit-data default-db-data-types-config
                        (if content {db-type content} {}))))
@@ -143,8 +149,9 @@
   "If program specifies entity plural it will be returned, otherwise it will be
   constructed using suffix 's'."
   [entity-signature & [model-source]]
-  (let [entity (if model-source (api/entity-info entity-signature
-                                                 {:model model-source})
+  (let [ei-args (if (contains? model-source :model) model-source
+                    {:model model-source})
+        entity (if model-source (api/entity-info entity-signature ei-args)
                    (api/entity-info entity-signature))]
     (if-let [plural (:plural entity)] (drill-out-name-for-db plural)
             (build-plural-for-db-name entity-signature))))

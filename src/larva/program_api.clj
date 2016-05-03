@@ -4,14 +4,15 @@
             [clojure.java.io :as io]
             [larva
              [graph :as g]
+             [meta-model :refer [Collection]]
              [program-api-schemes :refer :all]
-             [utils :refer [parse-project-clj]]]
+             [utils :as utils :refer [parse-project-clj]]]
             [schema.core :as s]
             [ubergraph.core :as u]))
 
 (defonce ^:private program-model (atom nil))
 (def default-larva-dir "larva_src")
-(def ^:private default-model-path
+(def default-model-path
   (.getPath (io/file default-larva-dir "larva.clj")))
 
 (defmulti ^:private sort-by-edge
@@ -93,6 +94,17 @@
   ([entity :- s/Str {:keys [model-path model] :as model-options}]
    (get-entity-properties (resolve-program model-options) entity)))
 
+(defn- get-property-data-type [program entity property]
+  (-> (u/attrs program (g/build-property-label property entity))
+      :type))
+
+(s/defn property-data-type :- APIDataType
+  "Returns data type of a property."
+  ([entity :- s/Str property :- APIProperty]
+   (get-property-data-type (model->program) entity property))
+  ([entity :- s/Str property :- APIProperty {:keys [model-path model] :as model-options}]
+   (get-property-data-type (resolve-program model-options) entity property)))
+
 (defn- get-back-ref&back-prop
   [program entity property reference ref-dest explicit-back-property]
   (and ref-dest
@@ -117,6 +129,8 @@
                    (remove #(empty? (first %)))) 0))))
 
 (defn- get-property-reference [program entity property]
+  ^{:break/when (and (= entity "Musician")
+                     (= property {:name "honors" :type {:coll :str}}))}
   (let [reference (first
                    (->> (g/build-property-label property entity)
                         (u/out-edges program)
@@ -126,13 +140,15 @@
         (if ref-dest (u/attr program reference :back-property))
         [[back-ref] back-prop]
         (if ref-dest (get-back-ref&back-prop
-                       program entity property reference ref-dest
-                       explicit-back-property))
+                      program entity property reference ref-dest
+                      explicit-back-property))
         src-crd   (if reference (u/attr program reference :cardinality))
         dest-crd  (if back-ref (u/attr program back-ref :cardinality))
         back-prop (if back-prop {:back-property back-prop})
         recursive (if (= reference back-ref) {:recursive true})]
-    (cond (not reference)  {}
+    (cond (and (not reference) (utils/valid? Collection (:type property)))
+          {:simple-collection :pseudo-reference}
+          (not reference)  :not-a-reference
           (and back-ref (and (= src-crd :coll) (= dest-crd :coll)))
           (merge {:many-to-many ref-dest} back-prop recursive)
           (and back-ref (and (= src-crd :one) (= dest-crd :one)))

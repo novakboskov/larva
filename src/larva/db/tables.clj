@@ -6,7 +6,7 @@
             [larva
              [program-api :as api]
              [program-api-schemes :as sch :refer [APIProperties]]
-             [utils :as utils]]
+             [utils :as utils :refer [api-call]]]
             [larva.db
              [commons :refer :all]
              [queries :refer [queries]]
@@ -15,13 +15,16 @@
             [schema.core :as s]))
 
 (s/def DBStringRefs
-  [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")])
+  [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")
+   (s/optional {:needed-columns APIProperties
+                :entity s/Str} "needed-columns")])
 
 (s/def CreateTableMap
   {:ad-entity-plural s/Str :ad-props-create-table s/Str})
 
 (s/def AlterMap
-  {:table s/Str :fk-name s/Str :on s/Str :to-table s/Str})
+  {:table           s/Str :fk-name s/Str :on s/Str :to-table s/Str
+   :drop-constraint s/Str})
 
 (s/def QueryMap
   {:ent                            s/Str  :prop                        s/Str
@@ -49,7 +52,7 @@
    (s/optional-key :alter-tables)  [AlterMap]
    (s/optional-key :queries)       [QueryMap]})
 
-(defn- infer-property-data-type
+(defn- infer-property-db-data-type
   "Returns a vector consisted of string to be placed as data type of table column
   if that column is needed and indicator that shows if it represents a reference."
   [prop-type-key cardinality db-types]
@@ -67,34 +70,44 @@
           (utils/valid? sch/APICustomDataType prop-type-key)
           [prop-type-key false])))
 
+(defn- is-column-needed? [crd]
+  (#{:one-to-many :not-a-reference} (get-cardinality-keyword crd)))
+
 (s/defn ^:always-validate build-db-create-table-string :- DBStringRefs
   "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
   properties that are representing any kind of references mapped to
   corresponding entity."
   [entity :- s/Str properties db-type force args]
   (let [[_ db-types]
-        (first (make-db-data-types-config :db-type db-type :force force))]
+        (first (make-db-data-types-config :db-type db-type :force force
+                                          :make-args args))]
     (loop [props        properties
            props-w-refs {entity []}
            strings      [(str "id " (:id db-types) " "
-                              (:prim-key (db-type database-grammar)))]]
+                              (:prim-key (db-type database-grammar)))]
+           needed-colls {:needed-columns [] :entity entity}]
       (if (not-empty props)
-        (let [p         (nth props 0) t (:type p)
-              crd       (if args (api/property-reference entity p args)
-                            (api/property-reference entity p))
-              [type rf] (infer-property-data-type t crd db-types)]
+        (let [p         (nth props 0)
+              t         (api-call args api/property-data-type entity p)
+              crd       (api-call args api/property-reference entity p)
+              [type rf] (infer-property-db-data-type t crd db-types)]
           (recur
            (rest props)
-           (if rf {entity (conj (get props-w-refs entity) p)} props-w-refs)
-           (if type (conj strings (str (drill-out-name-for-db (:name p)) " " type))
-               strings)))
+           (if rf (merge-with conj props-w-refs {entity p}) props-w-refs)
+           (if (is-column-needed? crd)
+             (conj strings (str (drill-out-name-for-db (:name p)) " " type))
+             strings)
+           (if (is-column-needed? crd) (merge-with conj needed-colls
+                                                   {:needed-columns p})
+               needed-colls)))
         [(str "(" (cs/join (str "," (System/lineSeparator) " ") strings) ")")
-         props-w-refs]))))
+         props-w-refs
+         needed-colls]))))
 
 (defn- build-additional-tbl-create-tbl-string
   [cardinality entity property args]
   (let [crd                (get-cardinality-keyword cardinality)
-        [db-type db-types] (first (make-db-data-types-config))
+        [db-type db-types] (first (make-db-data-types-config :make-args args))
         recursive          (contains? cardinality :recursive)
         uniq               (if (= crd :one-to-one) true)
         non-recursive-columns
@@ -102,7 +115,7 @@
                tbl2 (build-db-table-name (% cardinality) args)]
            ((->> database-grammar db-type :referential-table-columns) db-types
             [(make-id-column-name tbl1) tbl1 "id" uniq]
-            [(make-id-column-name tbl1) tbl2 "id" uniq]))
+            [(make-id-column-name tbl2) tbl2 "id" uniq]))
         recursive-columns
         #(let [tbl (build-db-table-name entity args)]
            ((->> database-grammar db-type :referential-table-columns) db-types
@@ -113,7 +126,7 @@
         :many-to-many (non-recursive-columns :many-to-many)
         :one-to-one   (non-recursive-columns :one-to-one)
         :simple-collection
-        (let [tbl (build-db-table-name entity)]
+        (let [tbl (build-db-table-name entity args)]
           ((->> database-grammar db-type :referential-table-columns) db-types
            [(make-id-column-name tbl) tbl "id"
             (drill-out-name-for-db (:name property))
@@ -143,25 +156,29 @@
   [cardinality entity property args keys-map :- TableKeys]
   (if-let [crd (#{:many-to-one :one-to-many}
                 (get-cardinality-keyword cardinality))]
-    (let [merge-keys     #(merge-with concat keys-map {:alter-tables [%]})
+    (let [[db-type _]    (first (make-db-data-types-config :make-args args))
+          merge-keys     #(merge-with concat keys-map {:alter-tables [%]})
           this-tbl       (build-db-table-name entity args)
           referenced-tbl (build-db-table-name (crd cardinality) args)
-          prop-name      (:name property)]
+          prop-name      (:name property)
+          drop-const     (:drop-constraint (db-type database-grammar))]
       (case crd
         :one-to-many
-        (merge-keys {:table    this-tbl
-                     :fk-name  (build-foreign-key-name referenced-tbl this-tbl
-                                                       prop-name)
-                     :on       (drill-out-name-for-db prop-name)
-                     :to-table referenced-tbl})
+        (merge-keys {:table           this-tbl
+                     :fk-name         (build-foreign-key-name referenced-tbl this-tbl
+                                                              prop-name)
+                     :on              (drill-out-name-for-db prop-name)
+                     :to-table        referenced-tbl
+                     :drop-constraint drop-const})
         :many-to-one
-        (merge-keys {:table    referenced-tbl
-                     :fk-name  (build-foreign-key-name
-                                this-tbl referenced-tbl
-                                (:back-property cardinality))
-                     :on       (drill-out-name-for-db
-                                (:back-property cardinality))
-                     :to-table this-tbl})))
+        (merge-keys {:table           referenced-tbl
+                     :fk-name         (build-foreign-key-name
+                                       this-tbl referenced-tbl
+                                       (:back-property cardinality))
+                     :on              (drill-out-name-for-db
+                                       (:back-property cardinality))
+                     :to-table        this-tbl
+                     :drop-constraint drop-const})))
     keys-map))
 
 (defn- do-qs-functions-calls
@@ -213,23 +230,24 @@
 (defn- form-already-made-item [inferred-cardinality entity property]
   (let [crd (get-cardinality-keyword inferred-cardinality)]
     [crd {:src  [entity (:name property)]
-          :dest [(crd inferred-cardinality) (:back-perty inferred-cardinality)]}]))
+          :dest [(crd inferred-cardinality) (:back-property inferred-cardinality)]}]))
 
 (s/defn ^:always-validate build-additional-templates-keys
   "Building keys aimed to fulfill templates that create up and down migrations
    for relation-consequential tables, corresponding alters and queries."
   [ent-refs :- [{s/Str APIProperties}] args]
+  ;; through entities
   (loop [er ent-refs made [] template-keys {}]
     (if (not-empty er)
       (let [[entity properties] (first (first er))
             [made-untll-now t-keys]
-            (loop [props properties made [] t-keys {}]
+            ;; through it's properties
+            (loop [props properties made (first made) t-keys {}]
               (if (not-empty props)
                 (let [p         (first props)
                       inferred-card
-                      (or
-                       (not-empty (if args (api/property-reference entity p args)
-                                      (api/property-reference entity p))))
+                      (as-> (api-call args api/property-reference entity p) $
+                        (if-not (= $ :not-a-reference) $))
                       made-item (form-already-made-item inferred-card entity p)]
                   (recur (rest props) (conj made made-item)
                          (merge-with
@@ -237,6 +255,6 @@
                           t-keys (make-keys inferred-card entity p made-item
                                             made args))))
                 [made t-keys]))]
-        (recur (rest er) (conj made made-untll-now)
+        (recur (rest er) (conj (first made) made-untll-now)
                (merge-with concat template-keys t-keys)))
       template-keys)))

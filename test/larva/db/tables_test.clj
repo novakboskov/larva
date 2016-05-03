@@ -3,12 +3,15 @@
             [larva
              [program-api :as api]
              [program-api-test :refer [eval-in-program-model-context]]
-             [test-data :refer :all]]
+             [test-data :refer :all]
+             [test-results :as res]]
             [larva.code-gen.common :as common]
             [larva.db
              [tables :as tbl]
              [utils-test :refer [eval-in-environment platform-agnostic]]]
             [larva.frameworks.luminus.stuff :as stuff]))
+
+;; Tests related to SQL for main tables
 
 (deftest build-db-create-table-string-test
   (testing "Create table string and returning properties with references."
@@ -18,9 +21,9 @@
       :postgres
       (let [entity (nth (api/all-entities) 0)
             ps     (api/entity-properties entity)
-            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER,\n social_profile INTEGER,\n instruments INTEGER,\n knows_how_to_repair INTEGER,\n disrespected_by INTEGER,\n mentor INTEGER)")]
+            string (platform-agnostic "(id SERIAL PRIMARY KEY,\n name VARCHAR(30),\n surname VARCHAR(30),\n nickname VARCHAR(20),\n band INTEGER,\n dream_band INTEGER)")]
         (is (= [string
-                {"Musician"
+                {entity
                  [{:name "honors" :type {:coll :str}}
                   {:name      "band"
                    :type
@@ -55,14 +58,26 @@
                    :type
                    {:one :reference
                     :to  ["Mentor" "learner"]
-                    :gui :select-form}}]}]
+                    :gui :select-form}}]}
+                {:needed-columns
+                 [{:name "name", :type :str, :gui-label "Name"}
+                  {:name "surname", :type :str, :gui-label "Surname"}
+                  {:name "nickname", :type "VARCHAR(20)", :gui-label "nick"}
+                  {:name      "band",
+                   :type
+                   {:one :reference, :to ["Band" "members"], :gui :select-form},
+                   :gui-label "Of band"}
+                  {:name      "dream band",
+                   :type
+                   {:one :reference, :to ["Band" "dream about"], :gui :select-form},
+                   :gui-label "Dream about"}],
+                 :entity entity}]
                (tbl/build-db-create-table-string entity ps :postgres true nil)))))
      (eval-in-environment
       :mysql
       (let [entity (nth (api/all-entities) 1)
             ps     (api/entity-properties entity)
-            string (platform-agnostic
-                    "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER,\n participated INTEGER)")]
+            string (platform-agnostic "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n name VARCHAR(30),\n genre VARCHAR(30),\n largeness INTEGER,\n category INTEGER)")]
         (is (= [string
                 {entity
                  [{:name      "members" :type {:coll :reference
@@ -81,14 +96,27 @@
                    :gui-label "Participated in"}
                   {:name "influenced" :type {:coll :reference
                                              :to   ["Band" "influenced"]
-                                             :gui  :table-view}}]}]
+                                             :gui  :table-view}}]}
+                {:needed-columns
+                 [{:name "name", :type :str, :gui-label "Name"}
+                  {:name "genre", :type :str, :gui-label "Genre"}
+                  {:name "largeness", :type :num, :gui-label "Largeness"}
+                  {:name      "category",
+                   :type
+                   {:one :reference, :to ["Category" "bands"], :gui :drop-list},
+                   :gui-label "Category"}],
+                 :entity entity}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))
       (let [entity (last (drop-last 1 (api/all-entities)))
             ps     (api/entity-properties entity)
             string (platform-agnostic
                     "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n more_info VARCHAR(30))")]
-        (is (= [string {entity []}]
+        (is (= [string {entity []}
+                {:needed-columns [{:name "more info", :type :str}],
+                 :entity         "more info"}]
                (tbl/build-db-create-table-string entity ps :mysql true nil))))))))
+
+;; Tests related to SQL for relation-consequential tables.
 
 (deftest partial-key-generation-test
   (testing "Correctness of template keys contributed by make-create-table-keys
@@ -144,10 +172,10 @@
            "resources/templates/"
            templ-yesql
            (str templates (second ((:additional-queries
-                                    (stuff/relational-db-files)) :yesql)))
+                                    stuff/relational-db-files) :yesql)))
            templ-hugsql
            (str templates (second ((:additional-queries
-                                    (stuff/relational-db-files)) :hugsql)))]
+                                    stuff/relational-db-files) :hugsql)))]
        (eval-in-environment
         :postgres
         (is (= {} (tbl/make-create-tbl-keys crd0 entity0 p0 nil {})))
@@ -156,35 +184,37 @@
              [{:ad-entity-plural
                "Musicians__instruments__Instruments__players__mtm"
                :ad-props-create-table
-               " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id INTEGER REFERENCES Instruments(id)"}]}
+               "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n instruments_id INTEGER REFERENCES Instruments(id))"}]}
             (tbl/make-create-tbl-keys crd1 entity0 p1 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural
                   "Socialmediaprofiles__owner__Musicians__social_profile__oto"
                   :ad-props-create-table
-                  " id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n socialmediaprofiles_id INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+                  "(id SERIAL PRIMARY KEY,\n socialmediaprofiles_id INTEGER REFERENCES Socialmediaprofiles(id) UNIQUE,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd7 entity2 p7 nil {})))
-        (is {:create-tables
-             [{:ad-entity-plural "Bands__influenced__r_mtm" ,
-               :ad-props-create-table
-               " id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id)"}]}
-            (= nil (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
+        (is (= {:create-tables
+                [{:ad-entity-plural "Bands__influenced__r_mtm" ,
+                  :ad-props-create-table
+                  "(id SERIAL PRIMARY KEY,\n bands_id INTEGER REFERENCES Bands(id),\n bands_id_r INTEGER REFERENCES Bands(id))"}]}
+               (tbl/make-create-tbl-keys crd6 entity1 p6 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto" ,
                   :ad-props-create-table
-                  " id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE"}]}
+                  "(id SERIAL PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id) UNIQUE,\n musicians_id_r INTEGER REFERENCES Musicians(id) UNIQUE)"}]}
                (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         ;; make-alter-tbl-keys test
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__band"
-                                :on       "band"
-                                :to-table "Bands"}]}
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__band"
+                                :on              "band"
+                                :to-table        "Bands"
+                                :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__dream_band"
-                                :on       "dream_band"
-                                :to-table "Bands"}]}
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__dream_band"
+                                :on              "dream_band"
+                                :to-table        "Bands"
+                                :drop-constraint "CONSTRAINT"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))
@@ -196,7 +226,7 @@
         ;; make-queries-keys test
         ;; A Musician-Band one-to-many relationship, "one" side
         (let [queries
-              "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands\nWHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians\nWHERE band = :band\n\n-- :name assoc-musician-band! :!\n-- :doc associates musician with corresponding band\nUPDATE Musicians SET band = :band\nWHERE id = :musician\n\n-- :name assoc-band-members! :!\n-- :doc associates band with corresponding members\nUPDATE Musicians SET band = :band\nWHERE id IN :tuple:members\n\n-- :name dissoc-musician-band! :!\n-- :doc dissociates musician from corresponding band\nUPDATE Musicians\nSET band = NULL\nWHERE id = :musician\n\n-- :name dissoc-band-members! :!\n-- :doc dissociates band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE id IN :tuple:members\n\n-- :name dissoc-all-band-members! :!\n-- :doc dissociates all band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE band = :band\n"]
+              "-- :name get-musician-band :? :1\n-- :doc returns band associated with musician\nSELECT * FROM Bands\nWHERE id = (SELECT band FROM Musicians WHERE id = :musician)\n\n-- :name get-band-members :? :*\n-- :doc returns members associated with band\nSELECT * FROM Musicians\nWHERE band = :band\n\n-- :name assoc-musician-band! :!\n-- :doc associates musician with corresponding band\nUPDATE Musicians SET band = :band\nWHERE id = :musician\n\n-- :name assoc-band-members! :!\n-- :doc associates band with corresponding members\nUPDATE Musicians SET band = :band\nWHERE id IN :tuple:members\n\n-- :name dissoc-musician-band! :!\n-- :doc dissociates musician from corresponding band\nUPDATE Musicians\nSET band = NULL\nWHERE id = :musician\n\n-- :name dissoc-band-members! :!\n-- :doc dissociates band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE id IN :tuple:members\n\n-- :name dissoc-all-band-members! :!\n-- :doc dissociates all band from corresponding members\nUPDATE Musicians\nSET band = NULL\nWHERE band = :band\n\n\n"]
           (is (= queries
                  (common/render-template
                   (slurp templ-hugsql) (tbl/make-queries-keys crd0 entity0 p0 nil {}))))
@@ -231,29 +261,31 @@
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__honors__smpl_coll"
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n honors VARCHAR(30))"}]}
                (tbl/make-create-tbl-keys crd4 entity0 p4 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__guru__r_oto"
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id),\n UNIQUE(musicians_id, musicians_id_r))"}]}
                (tbl/make-create-tbl-keys crd5 entity0 p5 nil {})))
         (is (= {:create-tables
                 [{:ad-entity-plural "Musicians__influenced__r_mtm" ,
                   :ad-props-create-table
-                  " id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id)"}]}
+                  "(id INTEGER AUTO_INCREMENT PRIMARY KEY,\n musicians_id INTEGER REFERENCES Musicians(id),\n musicians_id_r INTEGER REFERENCES Musicians(id))"}]}
                (tbl/make-create-tbl-keys crd6 entity0 p6 nil {})))
         ;; make-alter-tbl-keys test
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__band"
-                                :on       "band"
-                                :to-table "Bands"}]}
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__band"
+                                :on              "band"
+                                :to-table        "Bands"
+                                :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd8 entity1 p8 nil {})
                (tbl/make-alter-tbl-keys crd0 entity0 p0 nil {})))
-        (is (= {:alter-tables [{:table    "Musicians"
-                                :fk-name  "FK__Musicians__Bands__dream_band"
-                                :on       "dream_band"
-                                :to-table "Bands"}]}
+        (is (= {:alter-tables [{:table           "Musicians"
+                                :fk-name         "FK__Musicians__Bands__dream_band"
+                                :on              "dream_band"
+                                :to-table        "Bands"
+                                :drop-constraint "FOREIGN KEY"}]}
                (tbl/make-alter-tbl-keys crd3 entity0 p3 nil {})
                (tbl/make-alter-tbl-keys crd2 entity1 p2 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd7 entity2 p7 nil {})))
@@ -262,14 +294,48 @@
         (is (= {} (tbl/make-alter-tbl-keys crd5 entity0 p5 nil {})))
         (is (= {} (tbl/make-alter-tbl-keys crd6 entity0 p6 nil {}))))))))
 
-;; (deftest build-additional-templates-keys-test
-;;   (testing "Returned keys intended to fulfill create table template."
-;;     (eval-in-program-model-context
-;;      entity-have-no-properties
-;;      (let [ents      (api/all-entities)
-;;            db-t      :postgres
-;;            ent-props (map #(second
-;;                             (tbl/build-db-create-table-string %1 %2 db-t false
-;;                                                               nil))
-;;                           ents (map #(api/entity-properties %) ents))]
-;;        (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))))
+(deftest build-additional-templates-keys-test
+  (testing "Returned keys which are used to fill additional tables,
+            alter tables and additional queries templates."
+    (let [results (:build-additional-templates-keys-test res/results)]
+      (eval-in-program-model-context
+       no-entities-edge-case
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t true
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
+      (eval-in-program-model-context
+       no-entities-no-about-edge-case
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t true
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= {} (tbl/build-additional-templates-keys ent-props nil)))))
+      ;; super-simple program
+      (eval-in-program-model-context
+       entity-have-no-properties
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t true
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))]
+         (is (= (results 0) (tbl/build-additional-templates-keys ent-props nil)))))
+      ;; :alter-tables and :queries are present in result?
+      (eval-in-program-model-context
+       custom-property-datatype
+       (let [ents      (api/all-entities)
+             db-t      :postgres
+             ent-props (map #(second
+                              (tbl/build-db-create-table-string %1 %2 db-t true
+                                                                nil))
+                            ents (map #(api/entity-properties %) ents))
+             template-keys
+             (tbl/build-additional-templates-keys ent-props nil)]
+         (is (and (contains? template-keys :alter-tables)
+                  (contains? template-keys :queries))))))))

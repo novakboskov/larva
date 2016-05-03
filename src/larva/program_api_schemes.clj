@@ -11,6 +11,8 @@
 (s/def APIEntityInfo
   {:signature s/Str (s/optional-key :plural) s/Str})
 
+(def APIDataType mm/DataType)
+
 (def APISimpleDataType mm/SimpleDataType)
 
 (def APICustomDataType mm/CustomDataType)
@@ -35,10 +37,13 @@
 
 (def APIProgram mm/Program)
 
-(def APIPropertyReference
-  {(s/enum :one-to-many
-           :many-to-one
-           :one-to-one
-           :many-to-many)          s/Str
-   (s/optional-key :recursive)     s/Bool
-   (s/optional-key :back-property) s/Str})
+(s/def APIPropertyReference
+  (s/conditional
+   #(keyword? %) (s/enum :not-a-reference)
+   #(map? %) {(s/enum :one-to-many
+                      :many-to-one
+                      :one-to-one
+                      :many-to-many)              s/Str
+              (s/optional-key :recursive)         s/Bool
+              (s/optional-key :back-property)     s/Str
+              (s/optional-key :simple-collection) (s/enum :pseudo-reference)}))

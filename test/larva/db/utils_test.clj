@@ -9,7 +9,8 @@
              [utils :refer [slurp-as-data]]]
             [larva.db
              [stuff :as stuff]
-             [utils :as utils]]))
+             [utils :as utils]]
+            [clojure.java.io :as io]))
 
 (defmacro eval-in-environment [conf-for-type & forms]
   "Ensures execution in isolated environment considering database types
@@ -23,6 +24,21 @@
      ~@forms
      (clojure.java.io/delete-file default#)
      (if to-restore# (larva.utils/spit-data default# to-restore#))))
+
+(defmacro eval-in-model-file-environment [model-file & forms]
+  "Ensures execution in isolated environment considering larva model source
+   file in larva source directory."
+  `(let [default#    larva.program-api/default-model-path
+         to-restore# (if (.exists (io/file default#))
+                       (larva.utils/slurp-as-data default#))]
+     (if ~model-file
+       (do
+         (clojure.java.io/delete-file default# true)
+         (spit default# ~model-file)))
+     ~@forms
+     (if to-restore# (do
+                       (clojure.java.io/delete-file default#)
+                       (larva.utils/spit-data default# to-restore#)))))
 
 (defn platform-agnostic
   "Makes platform independent string from Unix specific one."
@@ -44,10 +60,10 @@
     (eval-in-program-model-context
      standard-program-1
      (let [db-type (utils/infer-db-type)]
-       (is (= "(name, genre, largeness, members)"
+       (is (= "(:name, :genre, :largeness, :members)"
               (utils/build-sequence-string (api/entity-properties "Band")
                                            db-type :values)))
-       (is (= "(:name, :genre, :largeness, :members)"
+       (is (= "(name, genre, largeness, members)"
               (utils/build-sequence-string (api/entity-properties "Band")
                                            db-type :insert)))
        (is (= "name = :name, genre = :genre, largeness = :largeness, members = :members"
@@ -76,7 +92,13 @@
                          "Category" custom-property-datatype)))
     (eval-in-program-model-context
      custom-property-datatype
-     (is (= "categories" (utils/build-plural-for-entity "Category"))))))
+     (is (= "categories" (utils/build-plural-for-entity "Category"))))
+    (eval-in-model-file-environment
+     nil
+     (eval-in-program-model-context
+      nil
+      (is (= "bangers" (utils/build-plural-for-entity
+                        "Musician" entity-plurals)))))))
 
 (deftest make-db-data-types-config-test
   (testing "database types configuration file on the right place.

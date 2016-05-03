@@ -22,4 +22,5 @@
 
 (defn render-assets [assets options]
   (binding [lnt/*dir* "."]
-    (apply lnt/->files options (map #(render-asset larva-render options %) assets))))
+    (apply lnt/->files options (map #(render-asset larva-render options %)
+                                    assets))))

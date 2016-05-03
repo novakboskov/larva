@@ -10,9 +10,12 @@
 
 (s/def CustomDataType s/Str)
 
+(s/def DataType
+  (s/cond-pre SimpleDataType CustomDataType))
+
 (s/def Collection
   "Simple collection property."
-  {:coll (s/cond-pre SimpleDataType CustomDataType)})
+  {:coll DataType})
 
 (s/def SignatureProperty
   (s/conditional

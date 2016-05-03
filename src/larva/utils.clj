@@ -39,3 +39,13 @@
   [map k1 k2]
   (let [f (get map k1) s (get map k2)]
     (assoc map k1 s k2 f)))
+
+(defn api-call [args function & necessary]
+  "Optional API call logic encapsulation."
+  ^{:break/when (= necessary ["Musician"])}
+  (if args (let [necessary (vec necessary)
+                 call-args (if (sequential? args)
+                             (apply (partial conj necessary) args)
+                             (conj necessary args))]
+             (apply function call-args))
+      (apply function necessary)))
