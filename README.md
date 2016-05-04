@@ -91,6 +91,13 @@ Now you can fire REPL and run:
 This will fill ```resources/migrations``` and ```resources/sql``` with database
 migrations and [HugSQL](http://www.hugsql.org/) queries respectively.
 
+To setup your database you should run up migratioins from
+```resources/migrations``` using:
+
+``` shell
+lein run migrate
+```
+
 Now you should run ```(start)``` form ```user``` namespace in REPL to start all
 the [Mount](https://github.com/tolitius/mount) states.
 
