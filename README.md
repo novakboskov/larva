@@ -77,7 +77,7 @@ project:
                  [larva "0.1.0-SNAPSHOT"]]
 ```
 
-Now you can start REPL and run:
+Now you can fire REPL and run:
 
 ``` clojure
 (require '[larva.frameworks.luminus.build :as larva])
@@ -131,6 +131,8 @@ connection.
                 (-> {:musician (:id musician)}
                     get-musician-mentor
                     :name) "!")))
+
+=> Philip is rockin' with The Unfos thanks to Marc!
 ```
 
 ## License
