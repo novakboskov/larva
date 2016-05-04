@@ -17,7 +17,7 @@
 (s/def DBStringRefs
   [(s/one s/Str "db-string") (s/optional {s/Str APIProperties} "net-refs")
    (s/optional {:needed-columns APIProperties
-                :entity s/Str} "needed-columns")])
+                :entity         s/Str} "needed-columns")])
 
 (s/def CreateTableMap
   {:ad-entity-plural s/Str :ad-props-create-table s/Str})
@@ -52,6 +52,9 @@
    (s/optional-key :alter-tables)  [AlterMap]
    (s/optional-key :queries)       [QueryMap]})
 
+(defn- is-column-needed? [crd]
+  (#{:one-to-many :not-a-reference} (get-cardinality-keyword crd)))
+
 (defn- infer-property-db-data-type
   "Returns a vector consisted of string to be placed as data type of table column
   if that column is needed and indicator that shows if it represents a reference."
@@ -69,9 +72,6 @@
           [(get db-types prop-type-key) false]
           (utils/valid? sch/APICustomDataType prop-type-key)
           [prop-type-key false])))
-
-(defn- is-column-needed? [crd]
-  (#{:one-to-many :not-a-reference} (get-cardinality-keyword crd)))
 
 (s/defn ^:always-validate build-db-create-table-string :- DBStringRefs
   "Returns a string to be placed in CREATE TABLE SQL statement and a vector of
@@ -114,12 +114,12 @@
         non-recursive-columns
         #(let [tbl1 (build-db-table-name entity args)
                tbl2 (build-db-table-name (% cardinality) args)]
-           ((->> database-grammar db-type :referential-table-columns) db-types
+           ((-> database-grammar db-type :referential-table-columns) db-types
             [(get-db-table-id entity args) tbl1 "id" uniq]
             [(get-db-table-id (% cardinality) args) tbl2 "id" uniq]))
         recursive-columns
         #(let [tbl (build-db-table-name entity args)]
-           ((->> database-grammar db-type :referential-table-columns) db-types
+           ((-> database-grammar db-type :referential-table-columns) db-types
             [(get-db-table-id entity args) tbl "id" uniq]
             [(get-db-table-id entity args true) tbl "id" uniq]))]
     (if (not recursive)
@@ -128,7 +128,7 @@
         :one-to-one   (non-recursive-columns :one-to-one)
         :simple-collection
         (let [tbl (build-db-table-name entity args)]
-          ((->> database-grammar db-type :referential-table-columns) db-types
+          ((-> database-grammar db-type :referential-table-columns) db-types
            [(get-db-table-id entity args) tbl "id"
             (drill-out-name-for-db (:name property))
             (:coll (api/property-data-type entity property args))])))
