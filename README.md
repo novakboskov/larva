@@ -58,6 +58,17 @@ Larva DSL is Clojure internal DSL which looks like this:
 Full language meta model is defined using [```plumatic/schema```](https://github.com/plumatic/schema)
 and can be found in ```larva.meta-model``` namespace.
 
+Larva DSL serves to provide model to code generators. It is internally
+represented as a directed graph using [Ubergraph](https://github.com/Engelberg/ubergraph)
+and you can paint a picture of your larva model:
+
+``` clojure
+(ubergraph.core/viz-graph
+ (larva.graph/->graph larva.test-data/custom-property-datatype))
+```
+
+![larva model graph](images/model_graph_example.jpg)
+
 ## Try it
 
 I'm currently implementing ```larva.db``` so you can try/test it.
