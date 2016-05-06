@@ -103,7 +103,7 @@ This will fill ```resources/migrations``` and ```resources/sql``` with database
 migrations and [HugSQL](http://www.hugsql.org/) queries respectively.
 
 To setup your database you should run up migratioins placed in
-```resources/migrations``` using standard [Luminus](http://www.luminusweb.net/docs#creating_a_new_application)
+```resources/migrations``` using standard [Luminus](http://www.luminusweb.net/docs/migrations.md#migrations_with_migratus)
 command:
 
 ``` shell
